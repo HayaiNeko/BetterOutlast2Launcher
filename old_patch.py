@@ -3,6 +3,9 @@ import time
 import subprocess
 import threading
 import customtkinter as ctk
+from bindings import Binding
+from files import File
+from ui import fonts, colors
 from tkinter import filedialog, messagebox
 
 # 🔹 Chemins et IDs
@@ -15,17 +18,7 @@ STEAM_CONTENT_PATH = rf"C:\Program Files (x86)\Steam\steamapps\content\app_{APP_
 
 class OldPatch:
     def __init__(self, saved_path=None):
-        """
-        Initializes the Old Patch manager.
-        - Checks if a path has already been saved.
-        - Automatically searches for the Old Patch folder if necessary.
-        - Validates that Outlast2.bat is present in the detected directory.
-        """
-        if saved_path and self.is_valid_old_patch(saved_path):
-            self.path = saved_path
-        else:
-            detected_path = self.detect_path()
-            self.path = detected_path if self.is_valid_old_patch(detected_path) else None
+        self.path = saved_path
 
     def detect_path(self):
         """
@@ -57,23 +50,32 @@ class OldPatch:
         - Select a folder manually.
         - Download the Old Patch through Steam with progress tracking.
         """
-        self.window = ctk.CTkToplevel(root)
+        self.window = ctk.CTkToplevel(root, fg_color=colors["background"])
         self.window.title("Old Patch Download")
         self.window.geometry("500x300")
 
-        ctk.CTkLabel(self.window, text="Choose how to get the Old Patch:", font=("Arial", 16)).pack(pady=10)
+        ctk.CTkLabel(self.window, text="Select your Old Patch Folder",
+                     font=fonts["h4"], text_color=colors["text"]).pack(pady=10)
 
-        ctk.CTkButton(self.window, text="📂 Select Folder", command=self.select_folder).pack(pady=5)
+        ctk.CTkButton(self.window, text="📂 Select Folder", command=self.select_folder,
+                      font=fonts["text"], text_color=colors["button text"], fg_color=colors["primary"],
+                      hover_color=colors["primary hover"]).pack(pady=5)
 
-        ctk.CTkLabel(self.window, text="Or download via Steam:", font=("Arial", 14)).pack(pady=10)
+        ctk.CTkLabel(self.window, text="Or download via Steam:",
+                     font=fonts["h4"], text_color=colors["text"]).pack(pady=10)
 
-        ctk.CTkButton(self.window, text="🎮 Open Steam Console", command=self.open_steam_console).pack(pady=5)
-        ctk.CTkButton(self.window, text="📋 Copy Steam Download Command", command=self.copy_steam_command).pack(pady=5)
+        ctk.CTkButton(self.window, text="🎮 Open Steam Console", command=self.open_steam_console,
+                      text_color=colors["button text"], fg_color=colors["primary"], font=fonts["text"],
+                      hover_color=colors["primary hover"]).pack(pady=5)
+        ctk.CTkButton(self.window, text="📋 Copy Steam Download Command", command=self.copy_steam_command,
+                      text_color=colors["button text"], fg_color=colors["primary"], font=fonts["text"],
+                      hover_color=colors["primary hover"]).pack(pady=5)
 
-        self.progress_label = ctk.CTkLabel(self.window, text="📥 Progress: 0.00%", font=("Arial", 12))
+        self.progress_label = ctk.CTkLabel(self.window, text="📥 Progress: 0.00%", font=fonts["small"],
+                                           text_color=colors["text"])
         self.progress_label.pack(pady=10)
 
-        self.progress_bar = ctk.CTkProgressBar(self.window)
+        self.progress_bar = ctk.CTkProgressBar(self.window, fg_color="primary")
         self.progress_bar.set(0)
         self.progress_bar.pack(fill="x", padx=20, pady=5)
 
@@ -148,6 +150,22 @@ class OldPatch:
                 except Exception as e:
                     print(f"Error on {fp}: {e}")
         return total
+
+    def launch_old_patch(self):
+        if not (self.path and self.is_valid_old_patch(self.path)):
+            detected_path = self.detect_path()
+            self.path = detected_path if self.is_valid_old_patch(detected_path) else None
+
+        if self.path is None:
+            self.get_old_patch()
+            return
+
+        Binding.demo_file = File(os.path.join(self.path, "OLGame", "Config", "DefaultInput.ini"))
+        Binding.sync_with_demo()
+
+        # sync mods if working
+
+
 
 
 def run_test():
