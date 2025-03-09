@@ -1,49 +1,116 @@
+import tkinter
+import paths
 import customtkinter as ctk
-import subprocess
-import webbrowser
-import pyperclip
+from ui import colors, fonts
+from widgets import CustomRadioButtons, ModSelector
+from bindings import Binding
+from settings import Setting, DisplaySetting
+import tkinter as tk
 
-# 🔹 Configuration de l'interface CustomTkinter
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+class LauncherUI:
+    def __init__(self):
+        self.root = ctk.CTk(fg_color=colors["background"])
+        self.root.geometry("600x600")
+        self.root.title("Better Outlast II Launcher")
 
-# 🔹 Définition des IDs du jeu
-APP_ID = "414700"  # Outlast 2
-DEPOT_ID = "414701"  # Fichiers Windows
-MANIFEST_ID = "7085410466650398118"  # Version du 10 mai 2017
+        self.root.iconphoto(True, tk.PhotoImage(file="OutlastII_icon.png"))
 
-# 🔹 Commande Steam à exécuter
-STEAM_COMMAND = f"download_depot {APP_ID} {DEPOT_ID} {MANIFEST_ID}"
+        self.main_content = ctk.CTkFrame(self.root, fg_color=colors["background_shade1"])
+        self.main_content.pack(pady=20)
 
-# 🔹 Fonction pour ouvrir la console Steam
-def open_steam_console():
-    webbrowser.open("steam://open/console")
+        self.title = ctk.CTkLabel(
+            self.main_content,
+            text="Better Outlast II Launcher",
+            text_color=colors["text"],
+            font=fonts["h1"]
+        )
+        self.title.pack(pady=20)
 
-# 🔹 Fonction pour copier la commande dans le presse-papier et informer l'utilisateur
-def copy_steam_command():
-    pyperclip.copy(STEAM_COMMAND)  # Copie la commande dans le presse-papier
-    status_label.configure(text="✅ Commande copiée ! Collez-la dans la console Steam.", text_color="green")
+        self.create_radio_buttons()
+        self.create_launch_button()
+        self.create_config_buttons()
 
-# 🔹 Créer la fenêtre principale
-root = ctk.CTk()
-root.geometry("500x250")
-root.title("Téléchargement - Ancienne version d'Outlast 2")
+    def create_radio_buttons(self):
+        self.mods_selector = ModSelector(
+            self.main_content,
+            title="Mod",
+            values=[("Vanilla", None), ("No CPK", None), ("Cutscene Skip", None), ("No Stamina", None)]
+        )
 
-# 🔹 Ajouter un titre
-title_label = ctk.CTkLabel(root, text="🔽 Téléchargeur d'anciennes versions d'Outlast 2", font=("Arial", 18, "bold"))
-title_label.pack(pady=10)
+        self.patch_selector = CustomRadioButtons(
+            self.main_content,
+            title="Patch",
+            values=[("Latest Patch", self.mods_selector.enable_all), ("Old Patch", self.mods_selector.disable_mods)]
+        )
 
-# 🔹 Bouton pour ouvrir la console Steam
-open_console_button = ctk.CTkButton(root, text="🎮 Ouvrir la console Steam", font=("Arial", 14, "bold"), command=open_steam_console)
-open_console_button.pack(pady=10)
+        self.patch_selector.pack(pady=10)
+        self.mods_selector.pack(pady=10, padx=10)
 
-# 🔹 Bouton pour copier la commande Steam
-copy_command_button = ctk.CTkButton(root, text="📋 Copier la commande Steam", font=("Arial", 14, "bold"), command=copy_steam_command)
-copy_command_button.pack(pady=10)
+    def create_launch_button(self):
+        self.launch_button = ctk.CTkButton(
+            self.main_content,
+            text="Launch Game",
+            width=250,
+            height=60,
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            text_color=colors["button text"],
+            font=fonts["h2"],
+            command=self.launch_game
+        )
+        self.launch_button.pack(pady=30)
 
-# 🔹 Label de statut
-status_label = ctk.CTkLabel(root, text="🔍 Ouvrez la console Steam et exécutez la commande.", font=("Arial", 14))
-status_label.pack(pady=10)
+    def create_config_buttons(self):
+        self.config_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        self.config_frame.pack(pady=10)
 
-# 🔹 Lancer l'application
-root.mainloop()
+        self.bindings_button = ctk.CTkButton(
+            self.config_frame,
+            text="Configure Bindings",
+            width=200,
+            height=40,
+            text_color=colors["button text"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            font=fonts["h4"],
+            command=self.open_bindings_window
+        )
+        self.bindings_button.grid(row=0, column=0, padx=10)
+
+        self.settings_button = ctk.CTkButton(
+            self.config_frame,
+            text="Option and Mods",
+            width=200,
+            height=40,
+            text_color=colors["button text"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            font=fonts["h4"],
+            command=self.open_settings_window
+        )
+        self.settings_button.grid(row=0, column=1, padx=10)
+
+    def lift_launcher(self):
+        print("lifting launcher")
+
+    def open_bindings_window(self):
+        bindings_window = ctk.CTkToplevel(self.root, fg_color=colors["background"])
+        Binding.show_bindings(window=bindings_window, lift_launcher=self.lift_launcher)
+
+    def open_settings_window(self):
+        settings_window = ctk.CTkToplevel(self.root, fg_color=colors["background"])
+        settings_window.geometry("560x400")
+        settings_window.attributes('-topmost', True)
+        settings_window.protocol("WM_DELETE_WINDOW", lambda: [settings_window.destroy(), self.lift_launcher()])
+
+        DisplaySetting.show_settings(window=settings_window)
+
+    def launch_game(self):
+        print(f"Selected Patch: {self.patch_selector.get_selected()} \nSelected Mod: {self.mods_selector.get_selected()}")
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    app = LauncherUI()
+    app.run()

@@ -4,6 +4,7 @@ import subprocess
 import threading
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
+from ui import fonts, colors
 
 # 🔹 Chemins et IDs
 APP_ID = "414700"  # Outlast 2
@@ -57,28 +58,40 @@ class OldPatch:
         - Select a folder manually.
         - Download the Old Patch through Steam with progress tracking.
         """
-        self.window = ctk.CTkToplevel(root)
+        self.window = ctk.CTkToplevel(root, fg_color=colors["background"])
         self.window.title("Old Patch Download")
+        self.window.attributes("-topmost", True)
         self.window.geometry("500x300")
 
-        ctk.CTkLabel(self.window, text="Choose how to get the Old Patch:", font=("Arial", 16)).pack(pady=10)
+        ctk.CTkLabel(self.window, text="Select your Old Patch folder:",
+                     font=fonts["h4"], text_color=colors["text"]).pack(pady=10)
 
-        ctk.CTkButton(self.window, text="📂 Select Folder", command=self.select_folder).pack(pady=5)
+        ctk.CTkButton(self.window, text="📂 Select Folder", command=self.select_folder,
+                      font=fonts["text"], text_color=colors["text"], fg_color=colors["primary"],
+                      hover_color=colors["primary hover"]).pack(pady=5)
 
-        ctk.CTkLabel(self.window, text="Or download via Steam:", font=("Arial", 14)).pack(pady=10)
+        ctk.CTkLabel(self.window, text="Or download via Steam:",
+                     font=fonts["h4"], text_color=colors["text"]).pack(pady=10)
 
-        ctk.CTkButton(self.window, text="🎮 Open Steam Console", command=self.open_steam_console).pack(pady=5)
-        ctk.CTkButton(self.window, text="📋 Copy Steam Download Command", command=self.copy_steam_command).pack(pady=5)
+        ctk.CTkButton(self.window, text="🎮 Open Steam Console", command=self.open_steam_console,
+                      font=fonts["text"], text_color=colors["text"], fg_color=colors["primary"],
+                      hover_color=colors["primary hover"]).pack(pady=5)
 
-        self.progress_label = ctk.CTkLabel(self.window, text="📥 Progress: 0.00%", font=("Arial", 12))
+        self.copy_steam_command_button = ctk.CTkButton(self.window, text="📋 Copy Steam Download Command", command=self.copy_steam_command,
+                                                       font=fonts["text"], text_color=colors["text"], fg_color=colors["primary"],
+                                                       hover_color=colors["primary hover"])
+        self.copy_steam_command_button.pack(pady=5)
+
+        self.progress_label = ctk.CTkLabel(self.window, text="📥 Progress: 0.00%",
+                                           font=fonts["small"], text_color=colors["text"])
         self.progress_label.pack(pady=10)
 
-        self.progress_bar = ctk.CTkProgressBar(self.window)
+        self.progress_bar = ctk.CTkProgressBar(self.window, progress_color=colors["primary"])
         self.progress_bar.set(0)
         self.progress_bar.pack(fill="x", padx=20, pady=5)
 
         # Start tracking download in a separate thread to avoid UI freezing
-        threading.Thread(target=self.track_download, daemon=True).start()
+        threading.Thread(target=self.track_download).start()
 
         self.window.mainloop()
 
@@ -105,7 +118,7 @@ class OldPatch:
         self.window.clipboard_clear()
         self.window.clipboard_append(f"download_depot {APP_ID} {DEPOT_ID} {MANIFEST_ID}")
         self.window.update()
-        messagebox.showinfo("Copied!", "Steam download command copied to clipboard!")
+        self.copy_steam_command_button.configure(text="✅ Copy Steam Download Command")
 
     def track_download(self):
         """
@@ -117,22 +130,24 @@ class OldPatch:
         while not os.path.exists(STEAM_CONTENT_PATH):
             self.progress_label.configure(text="📥 Waiting for download to start...", text_color="orange")
             time.sleep(1)
+        try:
+            while True:
+                total_size = self.get_folder_size(STEAM_CONTENT_PATH)
+                progress = min(100.0, (total_size / expected_size) * 100)  # Capped at 100%
 
-        while True:
-            total_size = self.get_folder_size(STEAM_CONTENT_PATH)
-            progress = min(100.0, (total_size / expected_size) * 100)  # Capped at 100%
+                self.progress_label.configure(
+                    text=f"📥 Progress: {progress:.2f}% ({total_size / (1024**3):.2f} GB / {expected_size_gb:.2f} GB)"
+                )
+                self.progress_bar.set(progress / 100)
 
-            self.progress_label.configure(
-                text=f"📥 Progress: {progress:.2f}% ({total_size / (1024**3):.2f} GB / {expected_size_gb:.2f} GB)"
-            )
-            self.progress_bar.set(progress / 100)
+                if total_size >= expected_size:
+                    self.progress_label.configure(text="✅ Download complete!", text_color="green")
+                    self.path = STEAM_CONTENT_PATH
+                    break
+                time.sleep(1)
 
-            if total_size >= expected_size:
-                self.progress_label.configure(text="✅ Download complete!", text_color="green")
-                self.path = STEAM_CONTENT_PATH
-                break
-
-            time.sleep(1)
+        except Exception as e:
+            print(e)
 
     @staticmethod
     def get_folder_size(path):
