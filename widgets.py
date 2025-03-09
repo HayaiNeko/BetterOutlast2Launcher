@@ -1,5 +1,7 @@
 import customtkinter as ctk
 from ui import colors, fonts
+import ctypes
+
 
 class CustomRadioButtons(ctk.CTkFrame):
     def __init__(self, master, title, values, **kwargs):
@@ -57,3 +59,50 @@ class ModSelector(CustomRadioButtons):
             btn.configure(state="normal")
         self.disabled = False
 
+
+
+class Tooltip(ctk.CTkFrame):
+    def __init__(self, parent, text, shade=0, **kwargs):
+        super().__init__(parent, fg_color="transparent", **kwargs)
+        self.text = text
+        self.shade = shade
+        self.parent = parent
+        self.tooltip_window = None
+
+        # Création du Canvas pour dessiner le cercle
+        self.canvas = ctk.CTkCanvas(self, width=24, height=24, highlightthickness=0,
+                                    bg=colors[f"background_shade{self.shade}"])
+        self.canvas.pack()
+
+        # Dessin du cercle
+        self.circle = self.canvas.create_oval(2, 2, 22, 22, fill=colors["primary"], outline="black")
+
+        # Ajout du point d'interrogation centré
+        self.canvas.create_text(12, 12, text="?", font=fonts["small"], fill="white", anchor="center")
+
+        # hover events
+        self.canvas.bind("<Enter>", self.show_tooltip)
+        self.canvas.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event):
+        if self.tooltip_window is None:
+            bg_color = colors[f"background_shade{self.shade+1}"]
+            self.tooltip_window = ctk.CTkToplevel(self.parent)
+            self.tooltip_window.wm_overrideredirect(True)
+            self.tooltip_window.attributes("-topmost", True)
+            self.tooltip_window.attributes('-alpha', 0.9)
+
+
+            label = ctk.CTkLabel(self.tooltip_window, text=self.text,
+                                 text_color=colors["button text"],
+                                 fg_color=bg_color,
+                                 corner_radius=10,
+                                 font=fonts["small"], padx=5, pady=2)
+            label.pack()
+
+        self.tooltip_window.geometry(f"+{self.winfo_rootx() + 30}+{self.winfo_rooty() - 10}")
+
+    def hide_tooltip(self, event):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
