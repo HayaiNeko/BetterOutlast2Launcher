@@ -58,7 +58,7 @@ class Binding:
         if cls.file is None or cls.demo_file is None:
             print("[ERROR] One of the files is None")
             return
-        cls.file.copy_lines(cls.demo_file)
+        cls.file.copy_file(cls.demo_file)
 
     def wait_for_keypress(self):
         key_name = get_keypress()
@@ -210,5 +210,3 @@ class DoubleBind(Binding):
             self.toggle.select()
         else:
             self.toggle.deselect()
-
-

@@ -23,9 +23,9 @@ GAME_DIRECTORY = os.getcwd()
 Binding.file = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultInput.ini"))
 
 Binding(command="Stat FPS", description="Show FPS", tooltip="this is a tooltip look")
+ol_menu_bind = Binding(command="OLA_ShowMenu", description="Open Outlast Menu")
+ol_menu_bind.disabled = True
 DoubleBind()
-
-
 
 fps_lines = Binding.file.get_lines(".Bindings(", "Set OLEngine MaxSmoothedFrameRate")
 fps_values = {3, 5, 8, 30, 60, 75, 105, 120, 144, 1000}
@@ -48,5 +48,20 @@ for fps in fps_values:
     Binding(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
 
 
-DisplaySetting("Launch with Steam", File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")), "bRelaunchInSteam=")
+DisplaySetting("Launch with Steam",
+               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")),
+               "bRelaunchInSteam=")
+DisplaySetting("Borderless Windowed",
+               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
+               "UseBorderlessFullscreen=", enabled_value="false", disabled_value="true")
+DisplaySetting("Pause on Loss of Focus",
+               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "OLEngine.ini")),
+               "bPauseOnLossOfFocus=")
+DisplaySetting("Mouse Smoothing",
+               Binding.file,
+               "bEnableMouseSmoothing=")
+
+
+
+
 

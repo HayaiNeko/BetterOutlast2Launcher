@@ -2,7 +2,10 @@ import ctypes
 from ctypes import wintypes
 
 # Importation de la DLL User32
-user32 = ctypes.WinDLL('user32', use_last_error=True)
+try:
+    user32 = ctypes.WinDLL('user32', use_last_error=True)
+except:
+    user32 = None
 
 # Dictionnaire des Virtual Key Codes pour le clavier
 VIRTUAL_KEY_CODES = {

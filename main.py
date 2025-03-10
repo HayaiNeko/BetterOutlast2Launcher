@@ -10,13 +10,13 @@ import tkinter as tk
 class LauncherUI:
     def __init__(self):
         self.root = ctk.CTk(fg_color=colors["background"])
-        self.root.geometry("600x600")
+        self.root.geometry("550x550")
         self.root.title("Better Outlast II Launcher")
 
         self.root.iconphoto(True, tk.PhotoImage(file="OutlastII_icon.png"))
 
         self.main_content = ctk.CTkFrame(self.root, fg_color=colors["background_shade1"])
-        self.main_content.pack(pady=20)
+        self.main_content.pack(fill="x", padx=20, pady=20)
 
         self.title = ctk.CTkLabel(
             self.main_content,
@@ -33,8 +33,8 @@ class LauncherUI:
     def create_radio_buttons(self):
         self.mods_selector = ModSelector(
             self.main_content,
-            title="Mod",
-            values=[("Vanilla", None), ("No CPK", None), ("Cutscene Skip", None), ("No Stamina", None)]
+            title="Mods",
+            values=[("No CPK", None), ("Cutscene Skip", None), ("No Stamina", None)]
         )
 
         self.patch_selector = CustomRadioButtons(

@@ -42,23 +42,86 @@ class CustomRadioButtons(ctk.CTkFrame):
         return self.selected_value
 
 
-class ModSelector(CustomRadioButtons):
+class CustomCheckboxes(ctk.CTkFrame):
+    def __init__(self, master, title, values, **kwargs):
+        """
+        :param master: widget parent
+        :param title: titre affiché au-dessus des checkboxes
+        :param values: liste de tuples (valeur, fonction) pour chaque checkbox
+        :param kwargs: arguments supplémentaires passés à CTkFrame
+        """
+        super().__init__(master, fg_color="transparent", **kwargs)
+
+        # Label de titre
+        title_label = ctk.CTkLabel(
+            self, text=title,
+            text_color=colors["text"],
+            font=fonts["h3"]
+        )
+        title_label.pack(pady=5)
+
+        self.buttons = []           # Pour stocker les références des boutons
+        self.selected_values = set()  # Contiendra les valeurs sélectionnées
+
+        # Création d'un bouton pour chaque valeur
+        for (value, command) in values:
+            btn = ctk.CTkButton(
+                self,
+                text=value,
+                width=120,
+                height=32,
+                font=fonts["h5"],
+                text_color=colors["button text"],
+                fg_color=colors["background_shade2"],
+                hover_color=colors["primary hover"],
+                command=lambda val=value, cmd=command: self.toggle_option(val, cmd)
+            )
+            btn.pack(pady=5, padx=5, side='left')
+            self.buttons.append(btn)
+
+    def toggle_option(self, value, command=None):
+        """
+        Coche ou décoche l'option `value`.
+        Modifie aussi la couleur du bouton concerné.
+        """
+        # Trouver le bouton correspondant
+        for btn in self.buttons:
+            if btn.cget("text") == value:
+                # Si la valeur est déjà sélectionnée, on la retire
+                if value in self.selected_values:
+                    self.selected_values.remove(value)
+                    btn.configure(fg_color=colors["background_shade2"])
+                else:
+                    # Sinon on ajoute la valeur à l'ensemble
+                    self.selected_values.add(value)
+                    btn.configure(fg_color=colors["primary"])
+                break
+
+        # Appeler la fonction associée si elle existe
+        if command:
+            command()
+
+    def get_selected(self):
+        """
+        Retourne la liste (ou l'ensemble) des valeurs sélectionnées.
+        """
+        # Vous pouvez aussi renvoyer un set si c'est plus adapté à votre usage.
+        return self.selected_values
+
+
+class ModSelector(CustomCheckboxes):
     def __init__(self, master, title, values, **kwargs):
         super().__init__(master, title, values, **kwargs)
-        self.disabled = False
 
     def disable_mods(self):
+        self.selected_values = set()
         for btn in self.buttons:
-            self.select_option("Vanilla")
-            if not (btn.cget("text") == "Vanilla"):
-                btn.configure(state="disabled")
-        self.disabled = True
+            btn.configure(fg_color=colors["background_shade2"])
+            btn.configure(state="disabled")
 
     def enable_all(self):
         for btn in self.buttons:
             btn.configure(state="normal")
-        self.disabled = False
-
 
 
 class Tooltip(ctk.CTkFrame):
@@ -75,7 +138,7 @@ class Tooltip(ctk.CTkFrame):
         self.canvas.pack()
 
         # Dessin du cercle
-        self.circle = self.canvas.create_oval(2, 2, 22, 22, fill=colors["primary"], outline="black")
+        self.circle = self.canvas.create_oval(2, 2, 22, 22, fill=colors["primary"], outline=colors["secondary"])
 
         # Ajout du point d'interrogation centré
         self.canvas.create_text(12, 12, text="?", font=fonts["small"], fill="white", anchor="center")

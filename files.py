@@ -63,3 +63,7 @@ class File:
             line for line in self.lines if not all(term.lower() in line.lower() for term in search_terms)
         ]
         print(f"[INFO] Deleted lines containing {search_terms}")
+
+    def copy_file(self, other):
+        other.lines = self.lines
+        other.write_lines()
