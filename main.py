@@ -2,9 +2,10 @@ import tkinter
 import paths
 import customtkinter as ctk
 from ui import colors, fonts
-from widgets import CustomRadioButtons, ModSelector
+from widgets import CustomRadioButtons
 from bindings import Binding
 from settings import Setting, DisplaySetting
+from mods import Mod, DisplayMod, LWMod
 import tkinter as tk
 
 class LauncherUI:
@@ -31,20 +32,15 @@ class LauncherUI:
         self.create_config_buttons()
 
     def create_radio_buttons(self):
-        self.mods_selector = ModSelector(
-            self.main_content,
-            title="Mods",
-            values=[("No CPK", None), ("Cutscene Skip", None), ("No Stamina", None)]
-        )
-
         self.patch_selector = CustomRadioButtons(
             self.main_content,
             title="Patch",
-            values=[("Latest Patch", self.mods_selector.enable_all), ("Old Patch", self.mods_selector.disable_mods)]
+            values=[("Latest Patch", LWMod.enable_all), ("Old Patch", LWMod.disable_mods)]
         )
-
         self.patch_selector.pack(pady=10)
-        self.mods_selector.pack(pady=10, padx=10)
+
+        LWMod.create_mod_selector(self.main_content)
+
 
     def create_launch_button(self):
         self.launch_button = ctk.CTkButton(
@@ -103,10 +99,11 @@ class LauncherUI:
         settings_window.attributes('-topmost', True)
         settings_window.protocol("WM_DELETE_WINDOW", lambda: [settings_window.destroy(), self.lift_launcher()])
 
+        DisplayMod.show_mods(window=settings_window)
         DisplaySetting.show_settings(window=settings_window)
 
     def launch_game(self):
-        print(f"Selected Patch: {self.patch_selector.get_selected()} \nSelected Mod: {self.mods_selector.get_selected()}")
+        LWMod.prepare_launch()
 
     def run(self):
         self.root.mainloop()

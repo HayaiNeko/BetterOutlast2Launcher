@@ -1,18 +1,18 @@
 import customtkinter as ctk
+from typing import List, Tuple
 from ui import colors, fonts
-import ctypes
 
 
 class CustomRadioButtons(ctk.CTkFrame):
-    def __init__(self, master, title, values, **kwargs):
-        super().__init__(master, fg_color="transparent", **kwargs)
+    def __init__(self, master, title: str, values):
+        super().__init__(master, fg_color="transparent")
 
         title = ctk.CTkLabel(self, text=title, text_color=colors["text"], font=fonts["h3"])
         title.pack(pady=5)
         self.buttons = []
 
         for index, (value, command) in enumerate(values):
-            btn = ctk.CTkButton(
+            button = ctk.CTkButton(
                 self, text=value,
                 width=120, height=32,
                 font=fonts["h5"],
@@ -21,19 +21,19 @@ class CustomRadioButtons(ctk.CTkFrame):
                 hover_color=colors["primary hover"],
                 command=lambda opt=value, cmd=command: self.select_option(opt, cmd)
             )
-            btn.pack(pady=5, padx=5, side='left')
-            self.buttons.append(btn)
+            button.pack(pady=5, padx=5, side='left')
+            self.buttons.append(button)
 
-        self.select_option(values[0][0], values[0][1])
+        self.select_option(values[0][0])
 
     def select_option(self, value, command=None):
         self.selected_value = value
 
-        for btn in self.buttons:
-            if btn.cget("text") == value:
-                btn.configure(fg_color=colors["primary"])
+        for button in self.buttons:
+            if button.cget("text") == value:
+                button.configure(fg_color=colors["primary"])
             else:
-                btn.configure(fg_color=colors["background_shade2"])
+                button.configure(fg_color=colors["background_shade2"])
 
         if command:
             command()
@@ -43,14 +43,13 @@ class CustomRadioButtons(ctk.CTkFrame):
 
 
 class CustomCheckboxes(ctk.CTkFrame):
-    def __init__(self, master, title, values, **kwargs):
+    def __init__(self, master, title: str, values):
         """
         :param master: widget parent
-        :param title: titre affiché au-dessus des checkboxes
-        :param values: liste de tuples (valeur, fonction) pour chaque checkbox
-        :param kwargs: arguments supplémentaires passés à CTkFrame
+        :param title: title of the checkbox section
+        :param values: (value, command). Command is executed on button press
         """
-        super().__init__(master, fg_color="transparent", **kwargs)
+        super().__init__(master, fg_color="transparent")
 
         # Label de titre
         title_label = ctk.CTkLabel(
@@ -65,7 +64,7 @@ class CustomCheckboxes(ctk.CTkFrame):
 
         # Création d'un bouton pour chaque valeur
         for (value, command) in values:
-            btn = ctk.CTkButton(
+            button = ctk.CTkButton(
                 self,
                 text=value,
                 width=120,
@@ -76,8 +75,8 @@ class CustomCheckboxes(ctk.CTkFrame):
                 hover_color=colors["primary hover"],
                 command=lambda val=value, cmd=command: self.toggle_option(val, cmd)
             )
-            btn.pack(pady=5, padx=5, side='left')
-            self.buttons.append(btn)
+            button.pack(pady=5, padx=5, side='left')
+            self.buttons.append(button)
 
     def toggle_option(self, value, command=None):
         """
@@ -85,16 +84,16 @@ class CustomCheckboxes(ctk.CTkFrame):
         Modifie aussi la couleur du bouton concerné.
         """
         # Trouver le bouton correspondant
-        for btn in self.buttons:
-            if btn.cget("text") == value:
+        for button in self.buttons:
+            if button.cget("text") == value:
                 # Si la valeur est déjà sélectionnée, on la retire
                 if value in self.selected_values:
                     self.selected_values.remove(value)
-                    btn.configure(fg_color=colors["background_shade2"])
+                    button.configure(fg_color=colors["background_shade2"])
                 else:
                     # Sinon on ajoute la valeur à l'ensemble
                     self.selected_values.add(value)
-                    btn.configure(fg_color=colors["primary"])
+                    button.configure(fg_color=colors["primary"])
                 break
 
         # Appeler la fonction associée si elle existe
@@ -107,21 +106,6 @@ class CustomCheckboxes(ctk.CTkFrame):
         """
         # Vous pouvez aussi renvoyer un set si c'est plus adapté à votre usage.
         return self.selected_values
-
-
-class ModSelector(CustomCheckboxes):
-    def __init__(self, master, title, values, **kwargs):
-        super().__init__(master, title, values, **kwargs)
-
-    def disable_mods(self):
-        self.selected_values = set()
-        for btn in self.buttons:
-            btn.configure(fg_color=colors["background_shade2"])
-            btn.configure(state="disabled")
-
-    def enable_all(self):
-        for btn in self.buttons:
-            btn.configure(state="normal")
 
 
 class Tooltip(ctk.CTkFrame):

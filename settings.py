@@ -72,7 +72,6 @@ class DisplaySetting(Setting):
         self.action_button.pack(side="right", padx=10)
         self.status_label.pack(side="right", padx=10)
 
-
         self.refresh_window()
 
     def refresh_window(self):

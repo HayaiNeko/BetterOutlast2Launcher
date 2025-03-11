@@ -4,7 +4,7 @@ import ctypes
 from files import File
 from bindings import Binding, DoubleBind
 from settings import Setting, DisplaySetting
-from mods import Mod, LWMod, DllMod
+from mods import Mod, LWMod, DisplayMod
 from os import path
 
 # Path for PyInstaller files
@@ -48,6 +48,16 @@ for fps in fps_values:
     Binding(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
 
 
+default_game = File(path.join(GAME_DIRECTORY, "OLGame, Config", "DefaultGame.ini"))
+stamina_off = Setting("StaminaOff",
+                      file=default_game,
+                      setting="StaminaMaxStamina=",
+                      enabled_value="-1", disabled_value="100")
+sprint_delay_off = Setting("SprintDelayOff",
+                           file=default_game,
+                           setting="SprintDelay=",
+                           enabled_value="0", disabled_value="2")
+
 DisplaySetting("Launch with Steam",
                File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")),
                "bRelaunchInSteam=")
@@ -60,6 +70,23 @@ DisplaySetting("Pause on Loss of Focus",
 DisplaySetting("Mouse Smoothing",
                Binding.file,
                "bEnableMouseSmoothing=")
+
+Mod("ModLoader",
+    (path.join(BASE_PATH, "Mods", "ModLoader"), path.join(GAME_DIRECTORY, "Binaries", "Win64")))
+
+LWMod("No CPK",
+      (path.join(BASE_PATH, "Mods", "No CPK"),path.join(GAME_DIRECTORY, "Mods")),
+      sprint_delay_off)
+LWMod("Cutscene Skip",
+      (path.join(BASE_PATH, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+
+LWMod("No Stamina",
+      None,
+      stamina_off, sprint_delay_off)
+
+DisplayMod("Speedrun Helper",
+           (path.join(BASE_PATH, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")))
+
 
 
 

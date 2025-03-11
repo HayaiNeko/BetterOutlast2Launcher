@@ -4,93 +4,133 @@ import customtkinter as ctk
 from utils import show_error
 from ui import fonts, colors
 from settings import Setting
+from widgets import CustomCheckboxes
+from files import File
+from typing import List, Tuple
 
 
 class Mod:
-    def __init__(self, name: str, base_paths: list[str], install_paths: list[str]):
-        assert len(base_paths) == len(install_paths), "base_paths and install paths have different lengths"
-
-        for path in base_paths:
-            assert os.path.exists(path), f"{path} does not exist"
-
+    def __init__(self, name: str, paths: Tuple[str, str] = None, *settings: Setting):
+        """
+        :param name: Name of the Mod, used for identification and in the UI
+        :param paths: Tuple containing the path for the base directory and the installation directory.
+        Can be set to None if the mod only relies on settings.
+        :param settings: Used for mods that needs to toggle settings during the installation
+        """
         self.name = name
-        self.install_paths = install_paths
-        self.paths = zip(base_paths, install_paths)
+        self.paths: List[Tuple[str, str]] = []
+        self.settings = settings
+        self.base_directory = None
+
+        if paths is not None:
+            self.base_directory = paths[0]
+            self.install_directory = paths[1]
+
+            # Get all file paths from the base directory
+            if os.path.exists(self.base_directory):
+                for item in os.listdir(self.base_directory):
+                    source = os.path.join(self.base_directory, item)
+                    destination = os.path.join(self.install_directory, item)
+                    self.paths.append((source, destination))
+            else:
+                print(f"[ERROR] Base directory '{self.base_directory}' doesn't exist.")
 
     def install(self):
-        for base_path, install_path in self.paths:
-            try:
-                if os.path.isfile(base_path):
-                    if not os.path.exists(install_path):
-                        os.makedirs(install_path)
-                    shutil.copy(base_path, install_path)
-                elif os.path.isdir(base_path):
-                    shutil.copytree(base_path, install_path, dirs_exist_ok=True)
-                print(f"{base_path} successfully moved to {install_path}")
+        """Install all of the files from the base directory into the installation directory. Enables all settings"""
+        # Check if there are files to be installed
+        if self.base_directory is not None:
+            # Ensure the installation directory exists
+            if not os.path.exists(self.install_directory):
+                os.makedirs(self.install_directory)
 
-            except Exception as e:
-                show_error(f"Couldn't install {base_path} to {install_path}: {e}")
+            # Copy each file or directory from source to destination
+            for source, destination in self.paths:
+                if os.path.exists(source):
+                    try:
+                        if os.path.isdir(source):
+                            shutil.copytree(source, destination, dirs_exist_ok=True)
+                            print(f"[INFO] Copied directory '{source}' to '{destination}'.")
+                        else:
+                            shutil.copy(source, destination)
+                            print(f"[INFO] Copied file '{source}' to '{destination}'.")
+                    except Exception as e:
+                        print(f"[ERROR] Error copying '{source}' to '{destination}': {e}")
+                else:
+                    print(f"[ERROR] Source path '{source}' does not exist. Skipping.")
+
+        # Enable all settings
+        for setting in self.settings:
+            setting.enable()
 
     def uninstall(self):
-        for install_path in self.install_paths:
-            if os.path.exists(install_path):
+        """Uninstall all the files from the mod. Disables all settings"""
+        # Remove each destination file
+        for _, destination in self.paths:
+            if os.path.exists(destination):
                 try:
-                    if os.path.isfile(install_path):
-                        os.remove(install_path)
-                    elif os.path.isdir(install_path):
-                        shutil.rmtree(install_path)
-                    print(f"{install_path} uninstalled successfully")
-
+                    os.remove(destination)
+                    print(f"[INFO] Removed '{destination}'.")
                 except Exception as e:
-                    show_error(f"Couldn't uninstall {install_path}: {e}")
+                    print(f"[ERROR] Could not remove '{destination}': {e}")
+            else:
+                print(f"[ERROR] Destination file '{destination}' does not exist.")
 
-    def is_installed(self):
-        for install_path in self.install_paths:
-            if not os.path.exists(install_path):
-                return False
-        return True
+        # Disable all settings
+        for setting in self.settings:
+            setting.disable()
 
-    def toggle_install(self):
+    def is_installed(self) -> bool:
+        """Check all the files from the mod are present and if all settings are enabled"""
+        # The mod is considered installed if all destination files exist.
+        if all(os.path.exists(destination) for _, destination in self.paths):
+            for setting in self.settings:
+                if not setting.is_enabled():
+                    return False
+            return True
+        return False
+
+    def toggle(self):
+        """Toggles the mod on and off"""
         if self.is_installed():
             self.uninstall()
         else:
             self.install()
 
 
-class DllMod(Mod):
-    dll_mods = []
+class DisplayMod(Mod):
+    # All DisplayMod instances
+    display_mods = []
 
-    def __init__(self, name: str, base_paths: list[str], install_paths: list[str], mod_dependant_setting: Setting = None):
-        super().__init__(name, base_paths, install_paths)
+    def __init__(self, name, paths, *settings):
+        super().__init__(name, paths, *settings)
+        self.__class__.display_mods.append(self)
 
-        self.mod_dependant_setting = mod_dependant_setting
-
-        self.__class__.dll_mods.append(self)
-
-    def uninstall(self):
-        super().uninstall()
-        if self.mod_dependant_setting is not None:
-            self.mod_dependant_setting.enable()
+        # UI Elements
+        self.container = None
+        self.mod_label = None
+        self.status_label = None
+        self.action_button = None
 
     def newline(self, parent):
+        """Create the UI line used to install and uninstall the mod"""
         self.container = ctk.CTkFrame(parent, fg_color="transparent")
         self.container.pack(fill="x", pady=10, padx=20)
 
         self.mod_label = ctk.CTkLabel(self.container, text=self.name, text_color=colors["text"], font=fonts["text"])
+        self.mod_label.pack(side="left")
 
-        if self.is_installed():
-            status_text, status_color = "Installed", colors["success"]
-            action_text = "Uninstall"
-        else:
-            status_text, status_color = "Not Installed", colors["error"]
-            action_text = "Install"
+        self.status_label = ctk.CTkLabel(self.container, font=fonts["small"])
+        self.action_button = ctk.CTkButton(self.container, text_color=colors["text"], font=fonts["small"], width=100,
+                                           fg_color=colors["primary"], hover_color=colors["primary hover"],
+                                           command=lambda: [self.toggle(), self.refresh_window()])
 
-        self.status_label = ctk.CTkLabel(self.container, text=status_text, text_color=status_color, font=fonts["small"])
-        self.action_button = ctk.CTkButton(self.container, text=action_text, text_color=colors["button text"],
-                                           font=fonts["small"], width=100,
-                                           command=lambda: [self.toggle_install(), self.refresh_window()])
+        self.action_button.pack(side="right", padx=10)
+        self.status_label.pack(side="right", padx=10)
+
+        self.refresh_window()
 
     def refresh_window(self):
+        """Refreshes the UI when the mod is installed/uninstalled"""
         if self.is_installed():
             status_text, status_color = "Installed", colors["success"]
             action_text = "Uninstall"
@@ -100,48 +140,49 @@ class DllMod(Mod):
         self.status_label.configure(text=status_text, text_color=status_color)
         self.action_button.configure(text=action_text)
 
-        if self.mod_dependant_setting is not None:
-            self.mod_dependant_setting.refresh_window()
-
     @classmethod
-    def show_mods(cls, frame):
-        title = ctk.CTkLabel(frame, text="Mods", text_color=colors["text"], font=fonts["h2"])
+    def show_mods(cls, window):
+        """Shows all instances of DisplayMod in a dedicated frame"""
+        frame = ctk.CTkFrame(window, fg_color=colors["background_shade1"])
+        frame.pack(pady=10, fill="x", padx=20)
+
+        title = ctk.CTkLabel(frame, text="Mods", text_color=colors["text"], font=fonts["h3"])
         title.pack(pady=10)
-        for dll_mod in cls.dll_mods:
-            dll_mod.newline(frame)
+
+        for mod in cls.display_mods:
+            mod.newline(frame)
 
 
 class LWMod(Mod):
-    LWMods = []
-    selected_mod = None
+    lw_mods = []
+    selector = None
 
-    def __init__(self, name:str, base_paths: list[str], install_paths: list[str]):
-        super().__init__(name, base_paths, install_paths)
-        self.launch_path = self.install_paths[0]
-
-        self.__class__.LWMods.append(self)
-        if self.name == "None":
-            self.__class__.selected_mod = self
-
-    def init_launch(self):
-        self.install()
-        self.launch()
-
-    def launch(self):
-        pass
+    def __init__(self, name, paths, *settings):
+        super().__init__(name, paths, *settings)
+        self.__class__.lw_mods.append(self)
 
     @classmethod
-    def launch_selected_mod(cls):
-        cls.selected_mod.init_launch()
+    def create_mod_selector(cls, master):
+        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, None) for mod in cls.lw_mods])
+        cls.selector.pack(pady=10, padx=10)
 
+    @classmethod
+    def disable_mods(cls):
+        cls.selector.selected_values = set()
+        for button in cls.selector.buttons:
+            button.configure(fg_color=colors["background_shade2"])
+            button.configure(state="disabled")
 
-class SuperJump(LWMod):
-    def __init__(self, name:str, base_paths: list[str], install_paths: list[str], root: ctk.CTk):
-        super().__init__(name, base_paths, install_paths)
-        self.root = root
+    @classmethod
+    def enable_all(cls):
+        for button in cls.selector.buttons:
+            button.configure(state="normal")
 
-    def init_launch(self):
-        self.show_superjump_window()
-
-    def show_superjump_window(self):
-        pass
+    @classmethod
+    def prepare_launch(cls):
+        selected_mods = cls.selector.get_selected()
+        for mod in cls.lw_mods:
+            if mod.name in selected_mods:
+                mod.install()
+            else:
+                mod.uninstall()
