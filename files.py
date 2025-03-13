@@ -35,7 +35,7 @@ class File:
 
     def get_lines(self, *search_terms: str):
         lines = []
-        for i, line in enumerate(self.lines):
+        for line in self.lines:
             if all(term.lower() in line.lower() for term in search_terms):
                 lines.append(line.strip())
         return lines

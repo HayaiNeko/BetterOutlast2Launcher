@@ -39,11 +39,10 @@ class Binding:
     def save_binding(self):
         prefix = ";-" if self.disabled else ""
         newline = f'{prefix}.Bindings=(Name="{self.key}",Command="{self.command}")'
-        self.file.replace_or_add(newline, ".Bindings(", self.command)
+        self.file.replace_or_add(newline, ".Bindings=(", self.command)
 
     @classmethod
     def load_bindings(cls):
-        print("loading bindings")
         for binding in cls.bindings:
             binding.load_binding()
 
@@ -175,7 +174,7 @@ class DoubleBind(Binding):
         newline = (
             f'{prefix}.Bindings=(Name="{self.key}",Command="{self.command} {self.scroll_direction} OL_USE")'
         )
-        self.file.replace_or_add(newline, ".Bindings(", self.command)
+        self.file.replace_or_add(newline, ".Bindings=(", self.command)
 
     def change_scroll_direction(self, choice):
         """Met à jour la direction du scroll."""

@@ -48,7 +48,7 @@ for fps in fps_values:
     Binding(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
 
 
-default_game = File(path.join(GAME_DIRECTORY, "OLGame, Config", "DefaultGame.ini"))
+default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
 stamina_off = Setting("StaminaOff",
                       file=default_game,
                       setting="StaminaMaxStamina=",
