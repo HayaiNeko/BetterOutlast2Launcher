@@ -27,7 +27,7 @@ class Binding:
         self.__class__.bindings.append(self)
 
     def load_binding(self):
-        _, line = self.file.get_line('.Bindings=(Name="', f'Command="{self.command}"')
+        _, line = self.file.get_line('.Bindings=(Name="', self.command)
         if line is not None:
             self.key = line.split('"')[1]
             return
