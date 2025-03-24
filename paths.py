@@ -1,5 +1,5 @@
-import os
 import sys
+import zipfile
 import ctypes
 from files import *
 from bindings import *
@@ -8,7 +8,7 @@ from widgets import show_error
 from mods import Mod, LWMod, DisplayMod
 from old_patch import OldPatch
 from launcher_settings import LauncherSettings
-from os import path
+from os import path, makedirs
 
 # Path for PyInstaller files
 if getattr(sys, 'frozen', False):  # If running as a PyInstaller bundle
@@ -75,28 +75,48 @@ Borderless = DisplaySetting("Borderless Windowed",
                             File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
                             "UseBorderlessFullscreen=", enabled_value="false", disabled_value="true")
 bPause = DisplaySetting("Pause on Loss of Focus",
-                        File(path.join(GAME_DIRECTORY, "OLGame", "Config", "OLEngine.ini")),
+                        File(path.join(GAME_DIRECTORY, "Engine", "Config", "BaseEngine.ini")),
                         "bPauseOnLossOfFocus=")
 MouseSmoothing = DisplaySetting("Mouse Smoothing",
                                 Binding.file,
                                 "bEnableMouseSmoothing=")
 
-# Mods
+
+def extract_mods():
+    mods_zip = path.join(BASE_PATH, 'Mods.zip')
+    mods_folder = path.join(GAME_DIRECTORY, 'Mods')
+
+    if not path.exists(mods_folder):
+        makedirs(mods_folder, exist_ok=True)
+        try:
+            with zipfile.ZipFile(mods_zip, 'r') as zip_ref:
+                zip_ref.extractall(mods_folder)
+            print("Mods extracted successfully to", mods_folder)
+        except Exception as e:
+            print("Failed to extract Mods.zip:", e)
+
+
+extract_mods()
+
+
+extract_mods()
+
+
 ModLoader = Mod("ModLoader",
-                (path.join(BASE_PATH, "Mods", "ModLoader"), path.join(GAME_DIRECTORY, "Binaries", "Win64")))
+                (path.join(GAME_DIRECTORY, "Mods", "ModLoader"), path.join(GAME_DIRECTORY, "Binaries", "Win64")))
 
 NoCPK = LWMod("No CPK",
-              (path.join(BASE_PATH, "Mods", "No CPK"),path.join(GAME_DIRECTORY, "Mods")),
+              (path.join(GAME_DIRECTORY, "Mods", "No CPK"),path.join(GAME_DIRECTORY, "Mods")),
               sprint_delay_off)
 CutsceneSkip = LWMod("Cutscene Skip",
-                     (path.join(BASE_PATH, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+                     (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
 
 NoStamina = LWMod("No Stamina",
                   None,
                   stamina_off, sprint_delay_off)
 
 SpeedrunHelper = DisplayMod("Speedrun Helper",
-                            (path.join(BASE_PATH, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")))
+                            (path.join(GAME_DIRECTORY, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")))
 
 
 def first_launch():
@@ -113,3 +133,5 @@ if not os.path.exists("LauncherConfig.ini"):
 
 LauncherSettings = LauncherSettings()
 OldPatch = OldPatch()
+
+Outlast2Icon = path.join(BASE_PATH, "OutlastII_icon.png")

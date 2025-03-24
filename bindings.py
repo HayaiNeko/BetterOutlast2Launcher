@@ -27,7 +27,7 @@ class Binding:
         self.__class__.bindings.append(self)
 
     def load_binding(self):
-        _, line = self.file.get_line('.Bindings=(Name="', self.command)
+        _, line = self.file.get_line('.Bindings=(Name="', f'Command="{self.command}"')
         if line is not None:
             self.key = line.split('"')[1]
             return
@@ -171,6 +171,7 @@ class Binding:
         def save_changes():
             cls.save_bindings()
             cls.window.destroy()
+            cls.window = None
             cls.lift_launcher()
 
         save_button = ctk.CTkButton(
@@ -278,7 +279,7 @@ class DoubleBind(MiscBinding):
 
 class FPSBinding(Binding):
     fps_values = set()
-    instances = [Binding(command="Stat FPS", description="Show FPS")]
+    instances = [Binding(command="Stat FPS", description="Show FPS", deletable=False)]
     title = "FPS Bindings"
 
     def __init__(self, fps: int):

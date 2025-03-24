@@ -12,11 +12,16 @@ def show_error(message):
     messagebox.showerror("Error", message, parent=root)
     root.destroy()
 
-def lift_window(window):
-    """lifts a window to forground"""
-    window.lift()
-    window.attributes("-topmost", True)
-    window.after(0, lambda: self.root.attributes("-topmost", False))
+
+class CustomTopLevel(ctk.CTkToplevel):
+    def __init__(self, parent, title: str, width: int, height: int):
+        super().__init__(parent ,fg_color=colors["background"])
+        self.title(title)
+        self.geometry(f"{width}x{height}")
+        self.attributes("-topmost", True)
+        self.lift()
+        self.focus_force()
+        self.after(100, lambda: self.attributes("-topmost", False))
 
 
 class CustomRadioButtons(ctk.CTkFrame):

@@ -213,7 +213,7 @@ class OldPatch:
             bat_file = os.path.join(self.path, "Outlast2.bat")
 
             File.demo_directory = self.path
-            File.sync_file_with_old_patch()
+            File.sync_all_with_old_patch()
             demo_steam = Setting(os.path.join(self.path, "OLGame", "Config", "DefaultEngine.ini"))
             demo_steam.disable()
 
