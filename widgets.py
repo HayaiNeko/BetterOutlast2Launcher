@@ -1,6 +1,22 @@
 import customtkinter as ctk
 from typing import List, Tuple
 from ui import colors, fonts
+import tkinter as tk
+from tkinter import messagebox
+
+
+def show_error(message):
+    """Display a messagebox for errors"""
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror("Error", message, parent=root)
+    root.destroy()
+
+def lift_window(window):
+    """lifts a window to forground"""
+    window.lift()
+    window.attributes("-topmost", True)
+    window.after(0, lambda: self.root.attributes("-topmost", False))
 
 
 class CustomRadioButtons(ctk.CTkFrame):
@@ -104,7 +120,6 @@ class CustomCheckboxes(ctk.CTkFrame):
         """
         Retourne la liste (ou l'ensemble) des valeurs sélectionnées.
         """
-        # Vous pouvez aussi renvoyer un set si c'est plus adapté à votre usage.
         return self.selected_values
 
 
@@ -134,10 +149,10 @@ class Tooltip(ctk.CTkFrame):
     def show_tooltip(self, event):
         if self.tooltip_window is None:
             bg_color = colors[f"background_shade{self.shade+1}"]
-            self.tooltip_window = ctk.CTkToplevel(self.parent)
+            self.tooltip_window = ctk.CTkToplevel(self.winfo_toplevel())
             self.tooltip_window.wm_overrideredirect(True)
             self.tooltip_window.attributes("-topmost", True)
-            self.tooltip_window.attributes('-alpha', 0.9)
+            self.tooltip_window.lift()
 
 
             label = ctk.CTkLabel(self.tooltip_window, text=self.text,
@@ -153,3 +168,44 @@ class Tooltip(ctk.CTkFrame):
         if self.tooltip_window:
             self.tooltip_window.destroy()
             self.tooltip_window = None
+
+
+class DeleteButton(ctk.CTkButton):
+    def __init__(self, parent, background_color, command=None, **kwargs):
+        self.background_color = background_color
+        super().__init__(
+            parent,
+            text="✕",
+            width=25,
+            fg_color="transparent",
+            text_color=background_color,
+            hover_color=background_color,
+            command=command,
+            corner_radius=50,
+            **kwargs
+        )
+        self.normal_text_color = colors["text"]
+        self.hover_text_color = "#A0A0A0"
+        self.bind("<Enter>", self.on_enter)
+        self.bind("<Leave>", self.on_leave)
+
+    def on_enter(self, event):
+        self.configure(text_color=self.hover_text_color)
+
+    def on_leave(self, event):
+        self.configure(text_color=self.background_color)
+
+
+class DeletePlaceHolder(ctk.CTkButton):
+    def __init__(self, parent, background_color):
+        super().__init__(
+            parent,
+            text="✕",
+            width=25,
+            fg_color="transparent",
+            text_color=background_color,
+            hover_color=background_color,
+            corner_radius=50,
+        )
+
+

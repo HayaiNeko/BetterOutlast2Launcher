@@ -1,10 +1,13 @@
 import os
 import sys
 import ctypes
-from files import File
-from bindings import Binding, DoubleBind
-from settings import Setting, DisplaySetting
+from files import *
+from bindings import *
+from settings import *
+from widgets import show_error
 from mods import Mod, LWMod, DisplayMod
+from old_patch import OldPatch
+from launcher_settings import LauncherSettings
 from os import path
 
 # Path for PyInstaller files
@@ -19,34 +22,23 @@ else:
 
 GAME_DIRECTORY = os.getcwd()
 # Checks game directory
+def check_game_folder():
+    required_files = [
+        "OLGame",
+        "Binaries",
+        "Engine",
+    ]
+    missing_files = [file for file in required_files if not os.path.exists(os.path.join(GAME_DIRECTORY, file))]
 
+    if missing_files:
+        show_error("The launcher is not in the correct directory. Ensure it is placed in the Outlast II game folder.")
+        sys.exit(1)
+
+
+check_game_folder()
+
+# Files
 Binding.file = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultInput.ini"))
-
-Binding(command="Stat FPS", description="Show FPS", tooltip="this is a tooltip look")
-ol_menu_bind = Binding(command="OLA_ShowMenu", description="Open Outlast Menu")
-ol_menu_bind.disabled = True
-DoubleBind()
-
-fps_lines = Binding.file.get_lines(".Bindings(", "Set OLEngine MaxSmoothedFrameRate")
-fps_values = {3, 5, 8, 30, 60, 75, 105, 120, 144, 1000}
-
-for line in fps_lines:
-    if 'set olengine maxsmoothedframerate' in line.lower():
-        parts = line.lower().split('set olengine maxsmoothedframerate ')
-        if len(parts) > 1:
-            fps_part = parts[1].split('"')[0]
-            try:
-                fps_value = int(fps_part)
-                fps_values.add(fps_value)
-            except ValueError:
-                print([f"[ERROR] Couldn't convert the fps value to int in {line}"])
-
-# Conversion en liste triée
-fps_values = sorted(fps_values)
-
-for fps in fps_values:
-    Binding(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
-
 
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
 stamina_off = Setting("StaminaOff",
@@ -58,37 +50,66 @@ sprint_delay_off = Setting("SprintDelayOff",
                            setting="SprintDelay=",
                            enabled_value="0", disabled_value="2")
 
-DisplaySetting("Launch with Steam",
-               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")),
-               "bRelaunchInSteam=")
-DisplaySetting("Borderless Windowed",
-               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
-               "UseBorderlessFullscreen=", enabled_value="false", disabled_value="true")
-DisplaySetting("Pause on Loss of Focus",
-               File(path.join(GAME_DIRECTORY, "OLGame", "Config", "OLEngine.ini")),
-               "bPauseOnLossOfFocus=")
-DisplaySetting("Mouse Smoothing",
-               Binding.file,
-               "bEnableMouseSmoothing=")
+# Bindings
+ol_menu_bind = MiscBinding(command="OLA_ShowMenu", description="Open Outlast Menu",
+                              tooltip="Bind a custom to key to open the menu.")
+MiscBinding(command="abc", description='abc')
+DoubleBind()
+MiscBinding(command="Displayall OLHero Rotation", description="Show Rotation")
 
-Mod("ModLoader",
-    (path.join(BASE_PATH, "Mods", "ModLoader"), path.join(GAME_DIRECTORY, "Binaries", "Win64")))
+SpeedrunHelperBinding(command="BOL Toggle Freecam", description="Toggle Freecam")
+SpeedrunHelperBinding(command="BOL TP to Freecam", description="TP to Freecam")
+SpeedrunHelperBinding(command="BOL Toggle GodMode", description="Toggle GodMode")
+SpeedrunHelperBinding(command="BOL Show Player Info", description="Show Player Info")
 
-LWMod("No CPK",
-      (path.join(BASE_PATH, "Mods", "No CPK"),path.join(GAME_DIRECTORY, "Mods")),
-      sprint_delay_off)
-LWMod("Cutscene Skip",
-      (path.join(BASE_PATH, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+FPSBinding.load_fps_values()
 
-LWMod("No Stamina",
-      None,
-      stamina_off, sprint_delay_off)
+# Settings
+Steam = DisplaySetting("Launch with Steam",
+                       File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")),
+                       "bRelaunchInSteam=")
+Vsync = DisplaySetting("Vsync",
+                       File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
+                       "SyncInterval=", enabled_value="1", disabled_value="0")
+Borderless = DisplaySetting("Borderless Windowed",
+                            File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
+                            "UseBorderlessFullscreen=", enabled_value="false", disabled_value="true")
+bPause = DisplaySetting("Pause on Loss of Focus",
+                        File(path.join(GAME_DIRECTORY, "OLGame", "Config", "OLEngine.ini")),
+                        "bPauseOnLossOfFocus=")
+MouseSmoothing = DisplaySetting("Mouse Smoothing",
+                                Binding.file,
+                                "bEnableMouseSmoothing=")
 
-DisplayMod("Speedrun Helper",
-           (path.join(BASE_PATH, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")))
+# Mods
+ModLoader = Mod("ModLoader",
+                (path.join(BASE_PATH, "Mods", "ModLoader"), path.join(GAME_DIRECTORY, "Binaries", "Win64")))
+
+NoCPK = LWMod("No CPK",
+              (path.join(BASE_PATH, "Mods", "No CPK"),path.join(GAME_DIRECTORY, "Mods")),
+              sprint_delay_off)
+CutsceneSkip = LWMod("Cutscene Skip",
+                     (path.join(BASE_PATH, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+
+NoStamina = LWMod("No Stamina",
+                  None,
+                  stamina_off, sprint_delay_off)
+
+SpeedrunHelper = DisplayMod("Speedrun Helper",
+                            (path.join(BASE_PATH, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")))
 
 
+def first_launch():
+    ModLoader.install()
+    SpeedrunHelper.install()
+    Steam.disable()
+    Vsync.disable()
+    Borderless.enable()
+    bPause.disable()
 
 
+if not os.path.exists("LauncherConfig.ini"):
+    first_launch()
 
-
+LauncherSettings = LauncherSettings()
+OldPatch = OldPatch()

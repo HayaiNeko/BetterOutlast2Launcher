@@ -2,34 +2,92 @@ import os
 import time
 import subprocess
 import threading
-import configparser
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
-from ui import fonts, colors
-from widgets import show_error
-from files import File
-from settings import Setting
+import configparser
+from ui import fonts, colors  # Using the provided fonts and colors
 
-# Default Steam content folder path and IDs
-APP_ID = "414700"       # Outlast 2
-DEPOT_ID = "414701"     # Windows files depot
+# 🔹 Paths and IDs
+APP_ID = "414700"  # Outlast 2
+DEPOT_ID = "414701"  # Windows files depot
 MANIFEST_ID = "7085410466650398118"  # Manifest from 10 May 2017
+
+# 🔹 Default Steam content folder path
 STEAM_CONTENT_PATH = rf"C:\Program Files (x86)\Steam\steamapps\content\app_{APP_ID}\depot_{DEPOT_ID}"
+
+
+# =============================================================================
+# LauncherSettings: Gestion des réglages booléens (Close On Launch, Check For Updates)
+# =============================================================================
+
+class LauncherSettings:
+    config_file = "settings.ini"
+    SECTION = "Launcher Settings"  # Avec espace
+
+    def __init__(self):
+        # S'assurer que le fichier de config existe
+        if not os.path.exists(LauncherSettings.config_file):
+            with open(LauncherSettings.config_file, 'w') as f:
+                f.write("")
+        # Lecture de la configuration
+        self.config = configparser.ConfigParser()
+        self.config.read(LauncherSettings.config_file)
+        if not self.config.has_section(LauncherSettings.SECTION):
+            self.config.add_section(LauncherSettings.SECTION)
+        # Chargement des réglages avec des valeurs par défaut
+        self.close_on_launch = self.config.getboolean(LauncherSettings.SECTION, "Close On Launch", fallback=False)
+        self.check_for_updates = self.config.getboolean(LauncherSettings.SECTION, "Check For Updates", fallback=True)
+        # Variables Tkinter (créées quand la fenêtre principale est disponible)
+        self.var_close = None
+        self.var_updates = None
+
+    def save(self):
+        # Sauvegarde des réglages dans le fichier de config
+        self.config.set(LauncherSettings.SECTION, "Close On Launch", str(self.var_close.get()))
+        self.config.set(LauncherSettings.SECTION, "Check For Updates", str(self.var_updates.get()))
+        with open(LauncherSettings.config_file, "w") as f:
+            self.config.write(f)
+        print("Launcher settings saved.")
+
+    def display(self, master):
+        container = ctk.CTkFrame(master, fg_color="transparent")
+        container.pack(fill="x", padx=10, pady=10)
+
+        # Titre avec espace dans le nom
+        title = ctk.CTkLabel(container, text="Launcher Settings",
+                             font=fonts["h3"], text_color=colors["text"])
+        title.pack(anchor="center", pady=(0, 10))
+
+        self.var_close = ctk.BooleanVar(master=container, value=self.close_on_launch)
+        switch_close = ctk.CTkSwitch(container, variable=self.var_close,
+                                     text="Close On Launch", command=self.save,
+                                     progress_color=colors["primary"])
+        switch_close.pack(pady=5)
+
+        self.var_updates = ctk.BooleanVar(master=container, value=self.check_for_updates)
+        switch_updates = ctk.CTkSwitch(container, variable=self.var_updates,
+                                       text="Check For Updates", command=self.save,
+                                       progress_color=colors["primary"])
+        switch_updates.pack(pady=5)
+
+        return container
+
+
+# =============================================================================
+# OldPatch: Gestion du dossier Old Patch – chargement, sauvegarde et installation/gestion
+# =============================================================================
 
 class OldPatch:
     CONFIG_SECTION = "OldPatch"
 
     def __init__(self):
-        self.config_file = "LauncherConfig.ini"
+        self.config_file = LauncherSettings.config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)
         if not self.config.has_section(OldPatch.CONFIG_SECTION):
             self.config.add_section(OldPatch.CONFIG_SECTION)
-
-        # Load the saved path (default is empty)
+        # Chargement du chemin sauvegardé (vide par défaut)
         self.path = self.config.get(OldPatch.CONFIG_SECTION, "Path", fallback="")
-        if not self.path:
-            self.path = self.detect_path()
 
     def save_path(self):
         self.config.set(OldPatch.CONFIG_SECTION, "Path", self.path)
@@ -38,14 +96,13 @@ class OldPatch:
         print(f"Old Patch path saved: {self.path}")
 
     def is_valid_old_patch(self, path):
-        """Check that the folder contains Outlast2.bat."""
+        """Vérifie que le dossier contient Outlast2.bat."""
         if path and os.path.isdir(path):
             bat_file_path = os.path.join(path, "Outlast2.bat")
             return os.path.isfile(bat_file_path)
         return False
 
     def detect_path(self):
-        """Automatically detect the Old Patch folder based on the program's location."""
         program_path = os.path.dirname(os.path.abspath(__file__))
         common_folder = os.path.join("steamapps", "common", "Outlast 2")
         if not program_path.endswith(common_folder):
@@ -55,19 +112,19 @@ class OldPatch:
                                       f"app_{APP_ID}", f"depot_{DEPOT_ID}")
         return old_patch_path if os.path.isdir(old_patch_path) else ""
 
-    def install_manage(self):
-        """Open a Toplevel window for selecting or downloading the Old Patch."""
-        self.window = ctk.CTkToplevel(fg_color=colors["background"])
+    def install_manage(self, master):
+        self.window = ctk.CTkToplevel(master, fg_color=colors["background"])
         self.window.title("Old Patch Management")
         self.window.attributes("-topmost", True)
-        self.window.geometry("600x400")  # Enlarged window
+        self.window.geometry("500x300")
 
-        # Title and current path display
+        # Nouveau titre et affichage du chemin courant
         title = ctk.CTkLabel(self.window, text="Select your Old Patch Folder",
-                              font=fonts["h3"], text_color=colors["text"])
+                              font=fonts["h4"], text_color=colors["text"])
         title.pack(pady=10)
 
-        current_path_text = self.path if self.path else "No path defined"
+        # Affichage du chemin courant (seul le texte)
+        current_path_text = self.path if self.path else "Aucun chemin défini"
         self.current_path_label = ctk.CTkLabel(self.window, text=current_path_text,
                                               font=fonts["text"], text_color=colors["text"])
         self.current_path_label.pack(pady=5)
@@ -83,10 +140,10 @@ class OldPatch:
         )
         btn_select.pack(pady=5)
 
-        # Download section
+        # Section de téléchargement
         label_steam = ctk.CTkLabel(self.window, text="Or download via Steam:",
-                                   font=fonts["h3"], text_color=colors["text"])
-        label_steam.pack(pady=(20, 10))
+                                   font=fonts["h4"], text_color=colors["text"])
+        label_steam.pack(pady=10)
 
         btn_steam = ctk.CTkButton(
             self.window,
@@ -125,10 +182,11 @@ class OldPatch:
         folder_selected = filedialog.askdirectory(title="Select Old Patch Folder", parent=master)
         if folder_selected:
             if not self.is_valid_old_patch(folder_selected):
-                show_error("The selected folder is not a valid Old Patch folder.")
+                messagebox.showerror("Erreur", "Le dossier sélectionné n'est pas un dossier Old Patch valide.")
             else:
                 self.path = folder_selected
                 self.save_path()
+                # Mise à jour de l'affichage du chemin sans messagebox de confirmation
                 self.current_path_label.configure(text=self.path)
 
     def open_steam_console(self):
@@ -141,7 +199,7 @@ class OldPatch:
         self.copy_steam_command_button.configure(text="✅ Command Copied")
 
     def track_download(self):
-        expected_size = 27096937514  # Expected size in bytes
+        expected_size = 27096937514  # Taille attendue en octets
         expected_size_gb = expected_size / (1024 ** 3)
         while not os.path.exists(STEAM_CONTENT_PATH):
             self.progress_label.configure(text="📥 Waiting for download to start...", text_color="orange")
@@ -188,41 +246,35 @@ class OldPatch:
                     print(f"Error on {fp}: {e}")
         return total
 
-    def create_button(self, parent):
-        """
-        Create and return a CTkButton for managing/installing the Old Patch.
-        When clicked, it will open the Old Patch management window.
-        """
-        button = ctk.CTkButton(
-            parent,
-            text="Manage/Install Old Patch",
-            command=lambda: self.install_manage(),
-            font=fonts["h4"],
-            text_color=colors["text"],
-            fg_color=colors["primary"],
-            hover_color=colors["primary hover"]
-        )
-        button.pack(padx=10, pady=20)
 
-    def launch_old_patch(self):
-        """
-        Checks if the current Old Patch folder is non-empty and valid.
-        If valid, triggers the launch procedure by executing the Outlast2.bat file.
-        """
-        if self.path and self.is_valid_old_patch(self.path):
-            bat_file = os.path.join(self.path, "Outlast2.bat")
+# =============================================================================
+# Interface principale
+# =============================================================================
 
-            File.demo_directory = self.path
-            File.sync_file_with_old_patch()
-            demo_steam = Setting(os.path.join(self.path, "OLGame", "Config", "DefaultEngine.ini"))
-            demo_steam.disable()
+if __name__ == "__main__":
+    launcher_settings = LauncherSettings()
+    old_patch_manager = OldPatch()
 
-            try:
-                # Launch the batch file
-                subprocess.Popen(bat_file, shell=True)
-                print("Old Patch launched successfully.")
-            except Exception as e:
-                show_error(f"Error launching Old Patch:{e}")
-        else:
-            self.install_manage()
+    root = ctk.CTk()
+    root.title("Launcher Settings")
+    root.geometry("600x400")
+    root.configure(fg_color=colors["background"])
 
+    launcher_settings.display(root)
+
+    def launch_old_patch_manager():
+        # Ouvre toujours la fenêtre de gestion sans afficher de messagebox si le dossier est déjà valide
+        old_patch_manager.install_manage(root)
+
+    btn_old_patch = ctk.CTkButton(
+        root,
+        text="Manage Old Patch",
+        command=launch_old_patch_manager,
+        font=fonts["h4"],
+        text_color=colors["text"],
+        fg_color=colors["primary"],
+        hover_color=colors["primary hover"]
+    )
+    btn_old_patch.pack(padx=10, pady=20)
+
+    root.mainloop()

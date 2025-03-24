@@ -1,6 +1,4 @@
 
-import customtkinter as ctk
-
 fonts = {
     "text": ("Inter", 14),
     "small": ("Inter", 12),
@@ -26,5 +24,5 @@ colors = {
     "secondary hover": "#00332b",
     "accent": "#088c78",
     "success": "green",
-    "error": "red"
+    "error": "red",
 }

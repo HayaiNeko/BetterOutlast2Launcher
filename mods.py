@@ -1,11 +1,9 @@
 import os
 import shutil
 import customtkinter as ctk
-from utils import show_error
 from ui import fonts, colors
 from settings import Setting
 from widgets import CustomCheckboxes
-from files import File
 from typing import List, Tuple
 
 
@@ -163,8 +161,16 @@ class LWMod(Mod):
 
     @classmethod
     def create_mod_selector(cls, master):
-        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, None) for mod in cls.lw_mods])
+        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, mod.toggle) for mod in cls.lw_mods])
         cls.selector.pack(pady=10, padx=10)
+
+        cls.enable_installed_mods()
+
+    @classmethod
+    def enable_installed_mods(cls):
+        for mod in cls.lw_mods:
+            if mod.is_installed():
+                cls.selector.toggle_option(mod.name)
 
     @classmethod
     def disable_mods(cls):
@@ -172,6 +178,8 @@ class LWMod(Mod):
         for button in cls.selector.buttons:
             button.configure(fg_color=colors["background_shade2"])
             button.configure(state="disabled")
+        for mod in cls.lw_mods:
+            mod.uninstall()
 
     @classmethod
     def enable_all(cls):

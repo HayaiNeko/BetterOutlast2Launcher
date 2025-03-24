@@ -1,11 +1,6 @@
-import tkinter
-import paths
-import customtkinter as ctk
-from ui import colors, fonts
-from widgets import CustomRadioButtons
-from bindings import Binding
-from settings import Setting, DisplaySetting
-from mods import Mod, DisplayMod, LWMod
+import subprocess
+from widgets import CustomRadioButtons, lift_window, show_error
+from paths import *
 import tkinter as tk
 
 class LauncherUI:
@@ -87,23 +82,44 @@ class LauncherUI:
         self.settings_button.grid(row=0, column=1, padx=10)
 
     def lift_launcher(self):
-        print("lifting launcher")
+        self.root.lift()
+        self.root.attributes("-topmost", True)
+        self.root.after(0, lambda: self.root.attributes("-topmost", False))
 
     def open_bindings_window(self):
         bindings_window = ctk.CTkToplevel(self.root, fg_color=colors["background"])
-        Binding.show_bindings(window=bindings_window, lift_launcher=self.lift_launcher)
+        bindings_window.title("Configure Bindings")
+        window_width = 560
+        window_height = 100 + min(len(Binding.bindings), 10) * 40
+        bindings_window.geometry(f"{window_width}x{window_height}")
+        lift_window(bindings_window)
+        Binding.window = bindings_window
+        Binding.lift_launcher = self.lift_launcher
+        Binding.show_window()
 
     def open_settings_window(self):
         settings_window = ctk.CTkToplevel(self.root, fg_color=colors["background"])
-        settings_window.geometry("560x400")
-        settings_window.attributes('-topmost', True)
+        settings_window.geometry("560x666")
+        lift_window(settings_window)
         settings_window.protocol("WM_DELETE_WINDOW", lambda: [settings_window.destroy(), self.lift_launcher()])
 
         DisplayMod.show_mods(window=settings_window)
         DisplaySetting.show_settings(window=settings_window)
 
+        LauncherSettings.display(settings_window)
+        OldPatch.create_button(settings_window)
+
     def launch_game(self):
-        LWMod.prepare_launch()
+        patch = self.patch_selector.selected_value
+        if patch == "Latest Patch":
+            try:
+                # Launch the batch file
+                subprocess.Popen(os.path.join(GAME_DIRECTORY, "Outlast2.bat"), shell=True)
+                print("Launching Outlast II...")
+            except Exception as e:
+                show_error(f"Error launching Outlast II: {e}")
+        elif patch == "Old Patch":
+            OldPatch.launch_old_patch()
 
     def run(self):
         self.root.mainloop()
