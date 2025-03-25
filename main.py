@@ -110,6 +110,7 @@ class LauncherUI:
     def launch_game(self):
         patch = self.patch_selector.selected_value
         if patch == "Latest Patch":
+            ModLoader.install()
             try:
                 # Launch the batch file
                 subprocess.Popen(os.path.join(GAME_DIRECTORY, "Outlast2.bat"), shell=True)

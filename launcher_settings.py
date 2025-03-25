@@ -52,5 +52,3 @@ class LauncherSettings:
                                        text="Check For Updates", command=self.save,
                                        progress_color=colors["primary"])
         switch_updates.pack(pady=5)
-
-        return container

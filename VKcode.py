@@ -7,7 +7,7 @@ try:
 except:
     user32 = None
 
-# Dictionnaire des Virtual Key Codes pour le clavier
+
 VIRTUAL_KEY_CODES = {
     0x08: "BackSpace", 0x09: "Tab", 0x0D: "Enter", 0xA0: "LeftShift", 0xA1: "RightShift",
     0xA2: "LeftControl", 0xA3: "RightControl", 0xA4: "LeftAlt", 0xA5: "RightAlt",
@@ -87,11 +87,4 @@ def get_keypress():
         user32.UnhookWindowsHookEx(keyboard_handle)
         user32.UnhookWindowsHookEx(mouse_handle)
 
-    return key_or_mouse  # Retourne le nom de la touche ou du bouton de souris
-
-
-# Test de la fonction
-if __name__ == "__main__":
-    print("Appuyez sur une touche ou cliquez avec la souris pour capturer l'input.")
-    input_detected = get_keypress()
-    print(f"Input détecté : {input_detected}")
+    return key_or_mouse

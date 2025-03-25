@@ -51,9 +51,6 @@ sprint_delay_off = Setting("SprintDelayOff",
                            enabled_value="0", disabled_value="2")
 
 # Bindings
-ol_menu_bind = MiscBinding(command="OLA_ShowMenu", description="Open Outlast Menu",
-                              tooltip="Bind a custom to key to open the menu.")
-MiscBinding(command="abc", description='abc')
 DoubleBind()
 MiscBinding(command="Displayall OLHero Rotation", description="Show Rotation")
 
@@ -94,9 +91,6 @@ def extract_mods():
             print("Mods extracted successfully to", mods_folder)
         except Exception as e:
             print("Failed to extract Mods.zip:", e)
-
-
-extract_mods()
 
 
 extract_mods()

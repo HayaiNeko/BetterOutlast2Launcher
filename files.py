@@ -7,7 +7,6 @@ class File:
     game_directory = os.getcwd()
     demo_directory = None
 
-
     def __init__(self, path: str):
         self.path = path
         self.local_path = os.path.relpath(self.path, self.__class__.game_directory)

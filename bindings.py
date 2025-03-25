@@ -17,6 +17,8 @@ class Binding:
     bindings_frame = None
     lift_launcher = None
 
+    section_bindings_frame = None
+
     def __init__(self, command: str, description: str, tooltip: str = None, deletable: bool = True):
         self.command = command
         self.description = description
@@ -129,11 +131,10 @@ class Binding:
                                      text_color=colors["text"], font=fonts["h4"])
         section_title.pack(pady=5)
 
-        if bindings:
-            section_bindings_frame = ctk.CTkFrame(section_frame, fg_color="transparent")
-            section_bindings_frame.pack(fill="x")
-            for row, binding in enumerate(bindings):
-                binding.newline(section_bindings_frame, row)
+        section_bindings_frame = ctk.CTkFrame(section_frame, fg_color="transparent", height=0)
+        section_bindings_frame.pack(fill="x")
+        for row, binding in enumerate(bindings):
+            binding.newline(section_bindings_frame, row)
 
         if add_button_text is not None:
             add_button = ctk.CTkButton(section_frame, font=fonts["text"], text_color=colors["text"],
@@ -141,6 +142,16 @@ class Binding:
                                        width=180, height=32,
                                        text=add_button_text, command=cls.add_binding)
             add_button.pack(pady=10)
+
+        return section_bindings_frame
+
+    @classmethod
+    def update_ui(cls):
+        if cls.section_bindings_frame:
+            for widget in cls.section_bindings_frame.winfo_children():
+                widget.destroy()
+            for row, binding in enumerate(cls.instances):
+                binding.newline(cls.section_bindings_frame, row)
 
     @classmethod
     def add_binding(cls):
@@ -181,13 +192,6 @@ class Binding:
         save_button.pack(pady=20)
 
         cls.window.protocol("WM_DELETE_WINDOW", save_changes)
-
-    @classmethod
-    def update_ui(cls):
-        if cls.bindings_frame:
-            for widget in cls.bindings_frame.winfo_children():
-                widget.destroy()
-            cls.show_bindings()
 
 
 class MiscBinding(Binding):
@@ -281,6 +285,7 @@ class FPSBinding(Binding):
     fps_values = set()
     instances = [Binding(command="Stat FPS", description="Show FPS", deletable=False)]
     title = "FPS Bindings"
+    section_bindings_frame = None
 
     def __init__(self, fps: int):
         super().__init__(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
@@ -294,7 +299,7 @@ class FPSBinding(Binding):
 
     @classmethod
     def show_section(cls):
-        super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
+        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
 
     @classmethod
     def add_binding(cls):
@@ -321,7 +326,7 @@ class FPSBinding(Binding):
 
         submit_button = ctk.CTkButton(
             window,
-            text='Submit',
+            text='Add   ',
             command=on_submit,
             fg_color=colors['primary'],
             hover_color=colors['primary hover'],
@@ -357,12 +362,14 @@ class SpeedrunHelperBinding(Binding):
 
     @classmethod
     def show_section(cls):
-        super().show_bindings_section(cls.title, cls.instances)
+        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
 
 
 class OptionalBinding(Binding):
     instances = []
     title = "Optional Bindings"
+    section_bindings_frame = None
+
     # Predefined list of optional bindings stored as a class attribute
     default_bindings = [
         ("OptionalCommand1", "Description for OptionalCommand1"),
@@ -396,7 +403,7 @@ class OptionalBinding(Binding):
         """
         Display the Optional Bindings section with an add button.
         """
-        super().show_bindings_section(cls.title, cls.instances, add_button_text="Add Optional Binding")
+        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
 
     @classmethod
     def add_binding(cls):
@@ -404,7 +411,7 @@ class OptionalBinding(Binding):
         Open a window to allow the addition of an optional binding from the predefined list.
         Only a binding that is not already present will be available in the dropdown menu.
         """
-        # Remove from the list those that have already been added (case-insensitive comparison)
+        # Remove from the list those that have already been added
         available_bindings = [
             (cmd, desc) for cmd, desc in cls.default_bindings
             if not any(inst.command.lower() == cmd.lower() for inst in cls.instances)

@@ -210,13 +210,12 @@ class OldPatch:
         If valid, triggers the launch procedure by executing the Outlast2.bat file.
         """
         if self.path and self.is_valid_old_patch(self.path):
-            bat_file = os.path.join(self.path, "Outlast2.bat")
-
             File.demo_directory = self.path
             File.sync_all_with_old_patch()
             demo_steam = Setting(os.path.join(self.path, "OLGame", "Config", "DefaultEngine.ini"))
             demo_steam.disable()
 
+            bat_file = os.path.join(self.path, "Outlast2.bat")
             try:
                 # Launch the batch file
                 subprocess.Popen(bat_file, shell=True)
