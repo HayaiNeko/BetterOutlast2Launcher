@@ -212,7 +212,9 @@ class OldPatch:
         if self.path and self.is_valid_old_patch(self.path):
             File.demo_directory = self.path
             File.sync_all_with_old_patch()
-            demo_steam = Setting(os.path.join(self.path, "OLGame", "Config", "DefaultEngine.ini"))
+            demo_steam = Setting(name="Demo Steam",
+                                 file=File(os.path.join(self.path, "OLGame", "Config", "DefaultEngine.ini"), demo_file=True),
+                                 setting="bRelaunchInSteam=")
             demo_steam.disable()
 
             bat_file = os.path.join(self.path, "Outlast2.bat")

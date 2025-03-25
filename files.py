@@ -7,12 +7,13 @@ class File:
     game_directory = os.getcwd()
     demo_directory = None
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, demo_file: bool = False):
         self.path = path
         self.local_path = os.path.relpath(self.path, self.__class__.game_directory)
         self.lines = self._read_lines()
 
-        self.__class__.files.append(self)
+        if not demo_file:
+            self.__class__.files.append(self)
 
     def _read_lines(self):
         if not os.path.exists(self.path):
@@ -114,7 +115,7 @@ class File:
         other.write_lines()
 
     def sync_file_with_old_patch(self):
-        demo_file = File(os.path.join(self.__class__.demo_directory, self.local_path))
+        demo_file = File(os.path.join(self.__class__.demo_directory, self.local_path), demo_file=True)
         self.copy_file(demo_file)
 
     @classmethod
