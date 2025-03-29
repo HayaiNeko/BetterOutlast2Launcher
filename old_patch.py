@@ -20,6 +20,7 @@ class OldPatch:
     CONFIG_SECTION = "OldPatch"
 
     def __init__(self):
+        # Open the config file
         self.config_file = "LauncherConfig.ini"
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)
@@ -29,7 +30,7 @@ class OldPatch:
         # Load the saved path (default is empty)
         self.path = self.config.get(OldPatch.CONFIG_SECTION, "Path", fallback="")
         if not self.path:
-            self.path = self.detect_path()
+            self.detect_path()
 
     def save_path(self):
         self.config.set(OldPatch.CONFIG_SECTION, "Path", self.path)
@@ -37,23 +38,28 @@ class OldPatch:
             self.config.write(f)
         print(f"Old Patch path saved: {self.path}")
 
-    def is_valid_old_patch(self, path):
-        """Check that the folder contains Outlast2.bat."""
+    @staticmethod
+    def is_valid_old_patch(path):
+        """Checks if the provided path is structured like an OL2 folder."""
         if path and os.path.isdir(path):
             bat_file_path = os.path.join(path, "Outlast2.bat")
-            return os.path.isfile(bat_file_path)
+            if not os.path.isfile(bat_file_path):
+                return False
+            required_dirs = ["OLGame", "BInaries", "Engine"]
+            for directory in required_dirs:
+                if not os.path.isdir(os.path.join(path, directory)):
+                    return False
+            return True
         return False
 
     def detect_path(self):
-        """Automatically detect the Old Patch folder based on the program's location."""
-        program_path = os.path.dirname(os.path.abspath(__file__))
-        common_folder = os.path.join("steamapps", "common", "Outlast 2")
-        if not program_path.endswith(common_folder):
-            return ""
-        steamapps_root = program_path[:-len(common_folder)].rstrip(os.sep)
-        old_patch_path = os.path.join(steamapps_root, "steamapps", "content",
-                                      f"app_{APP_ID}", f"depot_{DEPOT_ID}")
-        return old_patch_path if os.path.isdir(old_patch_path) else ""
+        """Detects the old patch path in the default downloading spot"""
+        # Supposons que le répertoire courant est "steamapps/common/Outlast 2"
+        steamapps_dir = os.path.abspath(os.path.join(os.getcwd(), "../.."))
+        patch_path = os.path.join(steamapps_dir, "content", f"app_{APP_ID}", f"depot_{DEPOT_ID}")
+
+        self.path = patch_path if self.is_valid_old_patch(patch_path) else ""
+        self.save_path()
 
     def install_manage(self):
         """Open a Toplevel window for selecting or downloading the Old Patch."""
@@ -169,7 +175,7 @@ class OldPatch:
         start_time = time.time()
         while time.time() - start_time < 30:
             new_path = self.detect_path()
-            if new_path and self.is_valid_old_patch(new_path) and new_path != self.path:
+            if new_path and self.is_valid_old_patch(new_path):
                 self.path = new_path
                 self.save_path()
                 print("Demo path updated to:", new_path)
@@ -191,7 +197,6 @@ class OldPatch:
     def create_button(self, parent):
         """
         Create and return a CTkButton for managing/installing the Old Patch.
-        When clicked, it will open the Old Patch management window.
         """
         button = ctk.CTkButton(
             parent,
@@ -217,10 +222,9 @@ class OldPatch:
                                  setting="bRelaunchInSteam=")
             demo_steam.disable()
 
-            bat_file = os.path.join(self.path, "Outlast2.bat")
             try:
                 # Launch the batch file
-                subprocess.Popen(bat_file, shell=True)
+                subprocess.Popen(os.path.join(self.path, "Binaries", "Win64", "Outlast2.exe"))
                 print("Old Patch launched successfully.")
             except Exception as e:
                 show_error(f"Error launching Old Patch:{e}")

@@ -54,10 +54,10 @@ sprint_delay_off = Setting("SprintDelayOff",
 DoubleBind()
 MiscBinding(command="Displayall OLHero Rotation", description="Show Rotation")
 
-SpeedrunHelperBinding(command="BOL Toggle Freecam", description="Toggle Freecam")
-SpeedrunHelperBinding(command="BOL TP to Freecam", description="TP to Freecam")
-SpeedrunHelperBinding(command="BOL Toggle GodMode", description="Toggle GodMode")
-SpeedrunHelperBinding(command="BOL Show Player Info", description="Show Player Info")
+SpeedrunHelperBinding(command="BOL ToggleFreeCam", description="Toggle Freecam")
+SpeedrunHelperBinding(command="BOL TeleportToFreeCam", description="Teleport to Freecam")
+SpeedrunHelperBinding(command="BOL ToggleGodMode", description="Toggle GodMode")
+
 
 FPSBinding.load_fps_values()
 
@@ -70,7 +70,7 @@ Vsync = DisplaySetting("Vsync",
                        "SyncInterval=", enabled_value="1", disabled_value="0")
 Borderless = DisplaySetting("Borderless Windowed",
                             File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
-                            "UseBorderlessFullscreen=", enabled_value="false", disabled_value="true")
+                            "UseBorderlessFullscreen=")
 bPause = DisplaySetting("Pause on Loss of Focus",
                         File(path.join(GAME_DIRECTORY, "Engine", "Config", "BaseEngine.ini")),
                         "bPauseOnLossOfFocus=")

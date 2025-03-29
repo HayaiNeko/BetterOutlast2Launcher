@@ -362,7 +362,7 @@ class SpeedrunHelperBinding(Binding):
 
     @classmethod
     def show_section(cls):
-        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
+        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances)
 
 
 class OptionalBinding(Binding):
@@ -403,7 +403,7 @@ class OptionalBinding(Binding):
         """
         Display the Optional Bindings section with an add button.
         """
-        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add FPS Binding")
+        cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add Optional Binding")
 
     @classmethod
     def add_binding(cls):

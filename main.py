@@ -113,7 +113,7 @@ class LauncherUI:
             ModLoader.install()
             try:
                 # Launch the batch file
-                subprocess.Popen(os.path.join(GAME_DIRECTORY, "Outlast2.bat"), shell=True)
+                subprocess.Popen(os.path.join(GAME_DIRECTORY, "Binaries", "Win64", "Outlast2.exe"), shell=True)
                 print("Launching Outlast II...")
             except Exception as e:
                 show_error(f"Error launching Outlast II: {e}")
