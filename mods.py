@@ -155,6 +155,7 @@ class DisplayMod(Mod):
 class LWMod(Mod):
     lw_mods = []
     selector = None
+    sprint_delay = None
 
     def __init__(self, name, paths, *settings):
         super().__init__(name, paths, *settings)
@@ -191,4 +192,8 @@ class LWMod(Mod):
         for mod in cls.lw_mods:
             if mod.name in selected_mods:
                 mod.install()
+
+        if "No CPK" in selected_mods:
+            cls.sprint_delay.enable()
+
 

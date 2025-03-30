@@ -20,7 +20,7 @@ sprint_delay_off = Setting("SprintDelayOff",
                            file=default_game,
                            setting="SprintDelay=",
                            enabled_value="0", disabled_value="2")
-sprint_delay_on = Setting("SprintDelayOn",
+LWMod.sprint_delay = Setting("SprintDelay",
                           file=default_game,
                           setting="SprintDelay=",
                           enabled_value="2", disabled_value="0")
@@ -92,17 +92,15 @@ def extract_mods():
 extract_mods()
 
 
-CutsceneSkip = LWMod("Cutscene Skip",
-                     (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+NoCPK = LWMod("No CPK",
+              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
 
-# Order matters (No CPK needs to be installed after No Stamina)
 NoStamina = LWMod("No Stamina",
                   None,
                   stamina_off, sprint_delay_off)
 
-NoCPK = LWMod("No CPK",
-              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),
-              sprint_delay_on)
+CutsceneSkip = LWMod("Cutscene Skip",
+                     (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
 
 SpeedrunHelper = DisplayMod("Speedrun Helper",
                             (path.join(GAME_DIRECTORY, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
