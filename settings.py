@@ -1,6 +1,7 @@
 from ui import fonts, colors
 import customtkinter as ctk
 from files import File
+from widgets import Tooltip, TooltipPlaceholder
 
 
 class Setting:
@@ -48,12 +49,10 @@ class DisplaySetting(Setting):
     display_settings = []  # Liste spécifique pour les paramètres affichables
 
     def __init__(self, name: str, file, setting: str, enabled_value: str = "true",
-                 disabled_value: str = "false"):
+                 disabled_value: str = "false", tooltip_text: str = ""):
         super().__init__(name, file, setting, enabled_value, disabled_value)
-        self.container = None
-        self.setting_label = None
-        self.status_label = None
-        self.action_button = None
+        self.tooltip_text = tooltip_text
+
         self.__class__.display_settings.append(self)  # Ajoute uniquement les DisplaySetting à la liste
 
     def newline(self, frame):
@@ -69,6 +68,12 @@ class DisplaySetting(Setting):
                                            fg_color=colors["primary"], hover_color=colors["primary hover"],
                                            command=lambda: [self.toggle(), self.refresh_window()])
 
+        if self.tooltip_text:
+            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+        else:
+            self.tooltip = TooltipPlaceholder(self.container)
+
+        self.tooltip.pack(side="right", padx=10)
         self.action_button.pack(side="right", padx=10)
         self.status_label.pack(side="right", padx=10)
 

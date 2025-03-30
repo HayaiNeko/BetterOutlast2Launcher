@@ -3,7 +3,7 @@ import shutil
 import customtkinter as ctk
 from ui import fonts, colors
 from settings import Setting
-from widgets import CustomCheckboxes
+from widgets import CustomCheckboxes, Tooltip, TooltipPlaceholder
 from typing import List, Tuple
 
 
@@ -99,15 +99,11 @@ class DisplayMod(Mod):
     # All DisplayMod instances
     display_mods = []
 
-    def __init__(self, name, paths, *settings):
-        super().__init__(name, paths, *settings)
-        self.__class__.display_mods.append(self)
+    def __init__(self, name, paths, tooltip_text: str = ""):
+        super().__init__(name, paths)
+        self.tooltip_text = tooltip_text
 
-        # UI Elements
-        self.container = None
-        self.mod_label = None
-        self.status_label = None
-        self.action_button = None
+        self.__class__.display_mods.append(self)
 
     def newline(self, parent):
         """Create the UI line used to install and uninstall the mod"""
@@ -121,7 +117,12 @@ class DisplayMod(Mod):
         self.action_button = ctk.CTkButton(self.container, text_color=colors["text"], font=fonts["small"], width=100,
                                            fg_color=colors["primary"], hover_color=colors["primary hover"],
                                            command=lambda: [self.toggle(), self.refresh_window()])
+        if self.tooltip_text:
+            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+        else:
+            self.tooltip = TooltipPlaceholder(self.container)
 
+        self.tooltip.pack(side="right", padx=10)
         self.action_button.pack(side="right", padx=10)
         self.status_label.pack(side="right", padx=10)
 
@@ -161,7 +162,7 @@ class LWMod(Mod):
 
     @classmethod
     def create_mod_selector(cls, master):
-        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, mod.toggle) for mod in cls.lw_mods])
+        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, None) for mod in cls.lw_mods])
         cls.selector.pack(pady=10, padx=10)
 
         cls.enable_installed_mods()
@@ -178,8 +179,6 @@ class LWMod(Mod):
         for button in cls.selector.buttons:
             button.configure(fg_color=colors["background_shade2"])
             button.configure(state="disabled")
-        for mod in cls.lw_mods:
-            mod.uninstall()
 
     @classmethod
     def enable_all(cls):
@@ -190,7 +189,9 @@ class LWMod(Mod):
     def prepare_launch(cls):
         selected_mods = cls.selector.get_selected()
         for mod in cls.lw_mods:
+            if not mod.name in selected_mods:
+                mod.uninstall()
+        for mod in cls.lw_mods:
             if mod.name in selected_mods:
                 mod.install()
-            else:
-                mod.uninstall()
+

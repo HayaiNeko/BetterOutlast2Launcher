@@ -1,131 +1,138 @@
-import subprocess
-from widgets import CustomRadioButtons, CustomTopLevel
-from paths import *
-import tkinter as tk
+import os
 
-class LauncherUI:
-    def __init__(self):
-        self.root = ctk.CTk(fg_color=colors["background"])
-        self.root.geometry("550x550")
-        self.root.title("Better Outlast II Launcher")
+import zipfile
+from paths import GAME_DIRECTORY, BASE_PATH
+from files import File
+from bindings import DoubleBind, MiscBinding, SpeedrunHelperBinding, FPSBinding, OptionalBinding
+from settings import Setting, DisplaySetting
+from mods import LWMod, DisplayMod
+from updates import LauncherUpdater
+from os import path, makedirs
+from launcher import Launcher
 
-        self.root.iconphoto(True, tk.PhotoImage(file=Outlast2Icon))
+# Files
+default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
+stamina_off = Setting("StaminaOff",
+                      file=default_game,
+                      setting="StaminaMaxStamina=",
+                      enabled_value="-1", disabled_value="100")
+sprint_delay_off = Setting("SprintDelayOff",
+                           file=default_game,
+                           setting="SprintDelay=",
+                           enabled_value="0", disabled_value="2")
 
-        self.main_content = ctk.CTkFrame(self.root, fg_color=colors["background_shade1"])
-        self.main_content.pack(fill="x", padx=20, pady=20)
+# Bindings
+DoubleBind()
+MiscBinding(command="DisplayAll OLHero Rotation", description="Show Rotation")
+MiscBinding(command="Set OLGame DifficultyMode EDMO_Insane", description="Set Difficulty to Insane")
 
-        self.title = ctk.CTkLabel(
-            self.main_content,
-            text="Better Outlast II Launcher",
-            text_color=colors["text"],
-            font=fonts["h1"]
-        )
-        self.title.pack(pady=20)
-
-        self.create_radio_buttons()
-        self.create_launch_button()
-        self.create_config_buttons()
-
-    def create_radio_buttons(self):
-        self.patch_selector = CustomRadioButtons(
-            self.main_content,
-            title="Patch",
-            values=[("Latest Patch", LWMod.enable_all), ("Old Patch", LWMod.disable_mods)]
-        )
-        self.patch_selector.pack(pady=10)
-
-        LWMod.create_mod_selector(self.main_content)
+SpeedrunHelperBinding(command="BOL ToggleFreeCam", description="Toggle Freecam")
+SpeedrunHelperBinding(command="BOL TeleportToFreeCam", description="Teleport to Freecam")
+SpeedrunHelperBinding(command="BOL ToggleGodMode", description="Toggle GodMode")
 
 
-    def create_launch_button(self):
-        self.launch_button = ctk.CTkButton(
-            self.main_content,
-            text="Launch Game",
-            width=250,
-            height=60,
-            fg_color=colors["primary"],
-            hover_color=colors["primary hover"],
-            text_color=colors["button text"],
-            font=fonts["h2"],
-            command=self.launch_game
-        )
-        self.launch_button.pack(pady=30)
+FPSBinding.load_fps_values()
 
-    def create_config_buttons(self):
-        self.config_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.config_frame.pack(pady=10)
+OptionalBinding.default_bindings = [
+    ("Set OLGame CurrentCheckpointName None", "Set Checkpoint to None"),
+    ("Set OLHero StaminaMaxStamina -1", "Enable Infinite Stamina"),
+    ("Set OLHero StaminaMaxStamina -1 | Set OLHero SprintDelay 0", "Enable No Stamina Settings"),
+    ("Set OLHero StaminaMaxStamina 100 | Set OLHero SprintDelay 2", "Disable No Stamina Settings"),
+    ("DisplayAll OLHero StaminaMaxStamina | Displayall OLHero SprintDelay", "Show Stamina/SprintDelay"),
+    ("DisplayAll OLHero Location", "Show Location"),
+    ("DisplayAll OLHero Velocity", "Show Velocity")
+]
 
-        self.bindings_button = ctk.CTkButton(
-            self.config_frame,
-            text="Configure Bindings",
-            width=200,
-            height=40,
-            text_color=colors["button text"],
-            fg_color=colors["primary"],
-            hover_color=colors["primary hover"],
-            font=fonts["h4"],
-            command=self.open_bindings_window
-        )
-        self.bindings_button.grid(row=0, column=0, padx=10)
+OptionalBinding.load_optional_bindings()
 
-        self.settings_button = ctk.CTkButton(
-            self.config_frame,
-            text="Option and Mods",
-            width=200,
-            height=40,
-            text_color=colors["button text"],
-            fg_color=colors["primary"],
-            hover_color=colors["primary hover"],
-            font=fonts["h4"],
-            command=self.open_settings_window
-        )
-        self.settings_button.grid(row=0, column=1, padx=10)
+# Settings
+Steam = DisplaySetting("Launch with Steam",
+                       File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultEngine.ini")),
+                       "bRelaunchInSteam=",
+                       tooltip_text="Launches the game with Steam.\n"
+                                    "Disabled is recommended.")
+Vsync = DisplaySetting("Vsync",
+                       File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
+                       "SyncInterval=", enabled_value="1", disabled_value="0",
+                       tooltip_text="Enabling Vsync renders max framerate changes impossible.\n"
+                                    "Disabled is recommended")
+Borderless = DisplaySetting("Borderless Windowed",
+                            File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultSystemSettings.ini")),
+                            "UseBorderlessFullscreen=",
+                            tooltip_text="Enables Borderless Windowed.\n"
+                                         "Recommended for less laggy alt tabs and to see your livesplit.")
+bPause = DisplaySetting("Pause on Loss of Focus",
+                        File(path.join(GAME_DIRECTORY, "Engine", "Config", "BaseEngine.ini")),
+                        "bPauseOnLossOfFocus=",
+                        tooltip_text="If disabled, game will not be paused during alt tabs.")
+MouseSmoothing = DisplaySetting("Mouse Smoothing",
+                                File(path.join(GAME_DIRECTORY, "Engine", "Config", "BaseInput.ini")),
+                                "bEnableMouseSmoothing=",
+                                tooltip_text="Changes how the mouse input is processed. Normally enabled by default")
 
-    def lift_launcher(self):
-        self.root.attributes("-topmost", True)
-        self.root.lift()
-        self.root.focus_force()
-        self.root.after(100, lambda: self.root.attributes("-topmost", False))
 
-    def open_bindings_window(self):
-        if Binding.window is None:
-            Binding.window = CustomTopLevel(self.root, "Configure Bindings", 560, 600)
-            Binding.lift_launcher = self.lift_launcher
-            Binding.show_window()
+def extract_mods():
+    mods_zip = path.join(BASE_PATH, 'Mods.zip')
+    mods_folder = path.join(GAME_DIRECTORY, 'Mods')
 
-    def open_settings_window(self):
-        settings_window = CustomTopLevel(self.root, "Option and Mods", 560, 666)
-        def delete_window():
-            settings_window.destroy()
-            self.lift_launcher()
+    if not path.exists(mods_folder):
+        makedirs(mods_folder, exist_ok=True)
+        try:
+            with zipfile.ZipFile(mods_zip, 'r') as zip_ref:
+                zip_ref.extractall(mods_folder)
+            print("Mods extracted successfully to", mods_folder)
+        except Exception as e:
+            print("Failed to extract Mods.zip:", e)
 
-        settings_window.protocol("WM_DELETE_WINDOW", delete_window)
 
-        DisplayMod.show_mods(window=settings_window)
-        DisplaySetting.show_settings(window=settings_window)
+extract_mods()
 
-        LauncherSettings.display(settings_window)
-        OldPatch.create_button(settings_window)
+NoCPK = LWMod("No CPK",
+              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),
+              stamina_off)
+CutsceneSkip = LWMod("Cutscene Skip",
+                     (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
 
-    def launch_game(self):
-        patch = self.patch_selector.selected_value
-        if patch == "Latest Patch":
-            ModLoader.install()
-            try:
-                # Launch the batch file
-                subprocess.Popen(os.path.join(GAME_DIRECTORY, "Binaries", "Win64", "Outlast2.exe"), shell=True)
-                print("Launching Outlast II...")
-            except Exception as e:
-                show_error(f"Error launching Outlast II: {e}")
-        elif patch == "Old Patch":
-            OldPatch.launch_old_patch()
+NoStamina = LWMod("No Stamina",
+                  None,
+                  stamina_off, sprint_delay_off)
 
-        if LauncherSettings.close_on_launch:
-            self.root.destroy()
+SpeedrunHelper = DisplayMod("Speedrun Helper",
+                            (path.join(GAME_DIRECTORY, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
+                            tooltip_text="Speedrun Helper allows you to:\n"
+                                         "Set Checkpoints with Ctrl + F1-F4, and TP to them with F1-F4.\n"
+                                         "Use the commands Toggle Freecam, TP to Freecam and GodMode.\n"
+                                         "You can setup the bindings for Speedrun Helper commands with the launcher.")
 
-    def run(self):
-        self.root.mainloop()
 
-if __name__ == "__main__":
-    app = LauncherUI()
-    app.run()
+CONFIG_FILE = "LauncherConfig.ini"
+
+
+def first_launch():
+    SpeedrunHelper.install()
+    Steam.disable()
+    Vsync.disable()
+    Borderless.enable()
+    bPause.disable()
+    with open(CONFIG_FILE, 'w') as f:
+        f.write("")
+
+
+if not os.path.exists(CONFIG_FILE):
+    first_launch()
+
+GITHUB_RELEASES_API_URL = "https://api.github.com/repos/HayaiNeko/BetterOutlast2Launcher/releases"
+EXECUTABLE_NAME = "BetterOutlast2Launcher.exe"
+CURRENT_VERSION = "0.9.0"
+
+
+launcher = Launcher(CURRENT_VERSION)
+
+updater = LauncherUpdater(CURRENT_VERSION, GITHUB_RELEASES_API_URL, EXECUTABLE_NAME, CONFIG_FILE)
+if launcher.launcher_settings.check_for_updates:
+    updater.check_and_update()
+
+updater.do_on_update()
+
+
+launcher.run()

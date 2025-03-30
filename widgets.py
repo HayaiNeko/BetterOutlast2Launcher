@@ -175,6 +175,11 @@ class Tooltip(ctk.CTkFrame):
             self.tooltip_window = None
 
 
+class TooltipPlaceholder(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent, width=24, height=24, fg_color="transparent")
+
+
 class DeleteButton(ctk.CTkButton):
     def __init__(self, parent, background_color, command=None, **kwargs):
         self.background_color = background_color
@@ -213,4 +218,103 @@ class DeletePlaceHolder(ctk.CTkButton):
             corner_radius=50,
         )
 
+
+class CustomAskYesNo:
+    """
+    A custom modal yes/no dialog using CustomTkinter.
+    """
+
+    def __init__(self, title, message, parent=None):
+        self.result = None
+
+        # If no parent is provided, create a hidden root window.
+        if parent is None:
+            self.root = ctk.CTk()
+            self.root.withdraw()
+            parent = self.root
+        else:
+            self.root = None
+
+        # Create a Toplevel window as the modal dialog.
+        self.dialog = ctk.CTkToplevel(parent)
+        self.dialog.title(title)
+        self.dialog.geometry("300x150")
+        self.dialog.resizable(False, False)
+        self.dialog.configure(bg=colors["background"])
+
+        # Center the dialog window using the underlying Tk interpreter.
+        self.dialog.tk.eval('tk::PlaceWindow %s center' % self.dialog.winfo_toplevel())
+
+        # Create a label to display the message.
+        self.label = ctk.CTkLabel(
+            self.dialog,
+            text=message,
+            font=fonts["text"],
+            text_color=colors["text"],
+        )
+        self.label.pack(padx=20, pady=20)
+
+        # Create a frame for the buttons.
+        self.button_frame = ctk.CTkFrame(self.dialog, fg_color="transparent")
+        self.button_frame.pack(pady=10)
+
+        # Create the Yes button.
+        self.yes_button = ctk.CTkButton(
+            self.button_frame,
+            text="Yes",
+            font=fonts["text"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            text_color=colors["button text"],
+            width=100,
+            command=self.on_yes
+        )
+        self.yes_button.pack(side="left", padx=10)
+
+        # Create the No button.
+        self.no_button = ctk.CTkButton(
+            self.button_frame,
+            text="No",
+            font=fonts["text"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            text_color=colors["button text"],
+            width=100,
+            command=self.on_no
+        )
+        self.no_button.pack(side="left", padx=10)
+
+        # Make the dialog modal.
+        self.dialog.grab_set()
+        self.dialog.protocol("WM_DELETE_WINDOW", self.on_no)
+
+    def on_yes(self):
+        """Callback when 'Yes' is clicked."""
+        self.result = True
+        self.dialog.destroy()
+        if self.root is not None:
+            self.root.destroy()
+
+    def on_no(self):
+        """Callback when 'No' is clicked or window is closed."""
+        self.result = False
+        self.dialog.destroy()
+        if self.root is not None:
+            self.root.destroy()
+
+    def show(self):
+        """
+        Displays the dialog and waits for user response.
+        Returns True if Yes was clicked, False otherwise.
+        """
+        self.dialog.wait_window()
+        return self.result
+
+    @classmethod
+    def askyesno(cls, title, message, parent=None):
+        """
+        A helper class method to create and display the dialog in one call.
+        """
+        dialog = cls(title, message, parent)
+        return dialog.show()
 

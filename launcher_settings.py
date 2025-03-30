@@ -1,4 +1,4 @@
-import os
+from paths import CONFIG_FILE
 import configparser
 import customtkinter as ctk
 from ui import fonts, colors  # Using provided fonts and colors
@@ -7,11 +7,7 @@ class LauncherSettings:
     SECTION = "Launcher Settings"  # Section name with space
 
     def __init__(self):
-        self.config_file = "LauncherConfig.ini"
-        # Ensure the configuration file exists
-        if not os.path.exists(self.config_file):
-            with open(self.config_file, 'w') as f:
-                f.write("")
+        self.config_file = CONFIG_FILE
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)
         if not self.config.has_section(LauncherSettings.SECTION):
@@ -51,4 +47,4 @@ class LauncherSettings:
         switch_updates = ctk.CTkSwitch(container, variable=self.var_updates,
                                        text="Check For Updates", command=self.save,
                                        progress_color=colors["primary"])
-        switch_updates.pack(pady=5)
+        switch_updates.pack(pady=(5, 15))

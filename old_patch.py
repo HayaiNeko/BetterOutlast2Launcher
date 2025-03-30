@@ -16,6 +16,7 @@ DEPOT_ID = "414701"     # Windows files depot
 MANIFEST_ID = "7085410466650398118"  # Manifest from 10 May 2017
 STEAM_CONTENT_PATH = rf"C:\Program Files (x86)\Steam\steamapps\content\app_{APP_ID}\depot_{DEPOT_ID}"
 
+
 class OldPatch:
     CONFIG_SECTION = "OldPatch"
 
@@ -162,25 +163,14 @@ class OldPatch:
                 )
                 self.progress_bar.set(progress / 100)
                 if total_size >= expected_size:
-                    self.progress_label.configure(text="✅ Download complete!", text_color="green")
-                    self.path = STEAM_CONTENT_PATH
-                    self.save_path()
-                    threading.Thread(target=self.try_update_demo_path, daemon=True).start()
-                    break
+                    if not self.path:
+                        self.progress_label.configure(text="✅ Download complete!", text_color="green")
+                        self.path = STEAM_CONTENT_PATH
+                        self.save_path()
+                        break
                 time.sleep(1)
         except Exception as e:
             print(e)
-
-    def try_update_demo_path(self):
-        start_time = time.time()
-        while time.time() - start_time < 30:
-            new_path = self.detect_path()
-            if new_path and self.is_valid_old_patch(new_path):
-                self.path = new_path
-                self.save_path()
-                print("Demo path updated to:", new_path)
-                return
-            time.sleep(1)
 
     @staticmethod
     def get_folder_size(path):

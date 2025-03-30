@@ -1,15 +1,17 @@
+import os
 import customtkinter as ctk
 import bisect
 from ui import fonts, colors
 from files import File
 from threading import Thread
 from VKcode import get_keypress
-from widgets import Tooltip, DeleteButton, DeletePlaceHolder
+from widgets import Tooltip, TooltipPlaceholder, DeleteButton, DeletePlaceHolder
 from tkinter import messagebox
+from paths import GAME_DIRECTORY
 
 
 class Binding:
-    file: File = None
+    file: File = File(os.path.join(GAME_DIRECTORY, "OLGame/Config/DefaultInput.ini"))
     demo_file: File = None
     bindings = []
     instances = []
@@ -105,11 +107,9 @@ class Binding:
 
         if self.tooltip_text:
             self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
-            self.tooltip.grid(row=0, column=2, padx=(20, 0), pady=5, sticky="ew")
         else:
-            #placeholder
-            self.tooltip = ctk.CTkFrame(self.container, width=24, height=24, fg_color="transparent")
-            self.tooltip.grid(row=0, column=2, padx=(20, 0), pady=5, sticky="ew")
+            self.tooltip = TooltipPlaceholder(self.container)
+        self.tooltip.grid(row=0, column=2, padx=(20, 0), pady=5, sticky="ew")
 
         if self.deletable:
             self.delete_button = DeleteButton(self.container, background_color=colors["background_shade1"],
@@ -272,10 +272,9 @@ class DoubleBind(MiscBinding):
 
         if self.tooltip_text:
             self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
-            self.tooltip.grid(row=0, column=2, rowspan=2, padx=(20, 0), pady=5, sticky="ew")
         else:
-            self.placeholder = ctk.CTkFrame(self.container, width=24, height=24, fg_color="transparent")
-            self.placeholder.grid(row=0, column=2, rowspan=2, padx=(20, 0), pady=5, sticky="ew")
+            self.tooltip = TooltipPlaceholder(self.container)
+        self.tooltip.grid(row=0, column=2, rowspan=2, padx=(20, 0), pady=5, sticky="ew")
 
         self.delete_placeholder = DeletePlaceHolder(self.container, background_color=colors["background_shade1"])
         self.delete_placeholder.grid(row=0, column=3, padx=15, pady=0, sticky="ew")
@@ -315,10 +314,10 @@ class FPSBinding(Binding):
         window = ctk.CTkToplevel()
         window.title('Add FPS Binding')
         window.geometry('300x150')
-        window.configure(bg=colors['background'])
+        window.configure(fg_color=colors['background'])
         window.attributes('-topmost', True)
 
-        label = ctk.CTkLabel(window, text='Enter your FPS value:', font=fonts['text'], fg_color=colors['background'])
+        label = ctk.CTkLabel(window, text='Enter your FPS value:', font=fonts['text'])
         label.pack(pady=10)
 
         entry = ctk.CTkEntry(window)
@@ -369,13 +368,7 @@ class OptionalBinding(Binding):
     instances = []
     title = "Optional Bindings"
     section_bindings_frame = None
-
-    # Predefined list of optional bindings stored as a class attribute
-    default_bindings = [
-        ("OptionalCommand1", "Description for OptionalCommand1"),
-        ("OptionalCommand2", "Description for OptionalCommand2"),
-        ("OptionalCommand3", "Description for OptionalCommand3"),
-    ]
+    default_bindings: list = None
 
     def __init__(self, command, description, tooltip=None):
         super().__init__(command, description, tooltip)
@@ -424,7 +417,7 @@ class OptionalBinding(Binding):
             selected = option_menu.get()
             # Search in the list for the binding corresponding to the selected command
             for cmd, desc in available_bindings:
-                if cmd == selected:
+                if desc == selected:
                     OptionalBinding(cmd, desc)
                     window.destroy()
                     cls.update_ui()
@@ -433,19 +426,18 @@ class OptionalBinding(Binding):
         window = ctk.CTkToplevel()
         window.title("Add Optional Binding")
         window.geometry("300x150")
-        window.configure(bg=colors['background'])
+        window.configure(fg_color=colors['background'])
         window.attributes('-topmost', True)
 
         label = ctk.CTkLabel(
             window,
             text="Select an Optional Binding:",
-            font=fonts['text'],
-            fg_color=colors['background']
+            font=fonts['text']
         )
         label.pack(pady=10)
 
         # Dropdown menu offering only the bindings that haven't been added
-        options = [cmd for cmd, _ in available_bindings]
+        options = [desc for _, desc in available_bindings]
         option_menu = ctk.CTkOptionMenu(
             window,
             values=options,
