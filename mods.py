@@ -170,14 +170,6 @@ class LWMod(Mod):
                                                      "(This is because modifying Sprint Delay is not allowed in No CPK No Stamina)")
         cls.selector.pack(pady=10, padx=10)
 
-        cls.enable_installed_mods()
-
-    @classmethod
-    def enable_installed_mods(cls):
-        for mod in cls.lw_mods:
-            if mod.is_installed():
-                cls.selector.toggle_option(mod.name)
-
     @classmethod
     def disable_mods(cls):
         cls.selector.selected_values = set()
