@@ -123,7 +123,7 @@ if not os.path.exists(CONFIG_FILE):
 
 GITHUB_RELEASES_API_URL = "https://api.github.com/repos/HayaiNeko/BetterOutlast2Launcher/releases"
 EXECUTABLE_NAME = "BetterOutlast2Launcher.exe"
-CURRENT_VERSION = "0.9.0"
+CURRENT_VERSION = "0.0.0"
 
 
 launcher = Launcher(CURRENT_VERSION)
