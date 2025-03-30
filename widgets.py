@@ -64,7 +64,7 @@ class CustomRadioButtons(ctk.CTkFrame):
 
 
 class CustomCheckboxes(ctk.CTkFrame):
-    def __init__(self, master, title: str, values):
+    def __init__(self, master, title: str, values, tooltip_text: str):
         """
         :param master: widget parent
         :param title: title of the checkbox section
@@ -72,18 +72,23 @@ class CustomCheckboxes(ctk.CTkFrame):
         """
         super().__init__(master, fg_color="transparent")
 
-        # Label de titre
+        title_frame = ctk.CTkFrame(self, fg_color="transparent")
+        title_frame.pack(pady=5)
+
         title_label = ctk.CTkLabel(
-            self, text=title,
+            title_frame, text=title,
             text_color=colors["text"],
             font=fonts["h3"]
         )
-        title_label.pack(pady=5)
+        title_label.pack(side="left", pady=0, padx=10)
 
-        self.buttons = []           # Pour stocker les références des boutons
-        self.selected_values = set()  # Contiendra les valeurs sélectionnées
+        if tooltip_text:
+            tooltip = Tooltip(title_frame, tooltip_text, 1)
+            tooltip.pack(side="right", padx=10, pady=0)
 
-        # Création d'un bouton pour chaque valeur
+        self.buttons = []
+        self.selected_values = set()
+
         for (value, command) in values:
             button = ctk.CTkButton(
                 self,

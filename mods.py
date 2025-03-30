@@ -162,7 +162,12 @@ class LWMod(Mod):
 
     @classmethod
     def create_mod_selector(cls, master):
-        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, None) for mod in cls.lw_mods])
+        cls.selector = CustomCheckboxes(master, "Mods", [(mod.name, None) for mod in cls.lw_mods],
+                                        tooltip_text="Launch with the following modifcations:\n"
+                                                     "- No CPK disables checkpoint killing.\n"
+                                                     "- Cutscene Skip allows you to skip cutscene with an S+Q.\n"
+                                                     "- No Stamina disables stamina, and sprint delay unless No CPK is selected.\n"
+                                                     "(This is because modifying Sprint Delay is not allowed in No CPK No Stamina)")
         cls.selector.pack(pady=10, padx=10)
 
         cls.enable_installed_mods()

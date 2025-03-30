@@ -20,6 +20,10 @@ sprint_delay_off = Setting("SprintDelayOff",
                            file=default_game,
                            setting="SprintDelay=",
                            enabled_value="0", disabled_value="2")
+sprint_delay_on = Setting("SprintDelayOn",
+                          file=default_game,
+                          setting="SprintDelay=",
+                          enabled_value="2", disabled_value="0")
 
 # Bindings
 DoubleBind()
@@ -87,15 +91,18 @@ def extract_mods():
 
 extract_mods()
 
-NoCPK = LWMod("No CPK",
-              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),
-              stamina_off)
+
 CutsceneSkip = LWMod("Cutscene Skip",
                      (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
 
+# Order matters (No CPK needs to be installed after No Stamina)
 NoStamina = LWMod("No Stamina",
                   None,
                   stamina_off, sprint_delay_off)
+
+NoCPK = LWMod("No CPK",
+              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),
+              sprint_delay_on)
 
 SpeedrunHelper = DisplayMod("Speedrun Helper",
                             (path.join(GAME_DIRECTORY, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
@@ -123,7 +130,7 @@ if not os.path.exists(CONFIG_FILE):
 
 GITHUB_RELEASES_API_URL = "https://api.github.com/repos/HayaiNeko/BetterOutlast2Launcher/releases"
 EXECUTABLE_NAME = "BetterOutlast2Launcher.exe"
-CURRENT_VERSION = "0.0.0"
+CURRENT_VERSION = "1.0.0"
 
 
 launcher = Launcher(CURRENT_VERSION)

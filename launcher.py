@@ -14,7 +14,7 @@ import tkinter as tk
 class Launcher:
     def __init__(self, current_version):
         self.root = ctk.CTk(fg_color=colors["background"])
-        self.root.geometry("550x600")
+        self.root.geometry("600x600")
         self.root.title("Better Outlast II Launcher")
 
         self.root.iconphoto(True, tk.PhotoImage(file=OL2_ICON))
@@ -113,7 +113,6 @@ class Launcher:
                                      font=fonts["small"])
         credits_label.pack(side="bottom", pady=(0, 5))
         credits_title.pack(side="bottom", pady=0)
-
 
     def lift_launcher(self):
         self.root.attributes("-topmost", True)
