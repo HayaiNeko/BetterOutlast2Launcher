@@ -4,30 +4,48 @@ import sys
 import subprocess
 import textwrap
 import configparser
-from widgets import CustomAskYesNo
+import shutil
+from widgets import CustomAskYesNo, CustomShowInfo
+from paths import GAME_DIRECTORY, CONFIG_FILE
 
+
+def version_to_number(version):
+    """
+    Converts a version string in the format x.y.z into a number 00x00y00z (zero-padded).
+    """
+    try:
+        major, minor, patch = map(int, version.split('.'))
+        major_str = f"{major:03d}"
+        minor_str = f"{minor:03d}"
+        patch_str = f"{patch:03d}"
+        version_number = int(major_str + minor_str + patch_str)
+        return version_number
+    except ValueError:
+        raise ValueError("Invalid version format. Expected format 'x.y.z'")
 
 class LauncherUpdater:
-    def __init__(self, current_version, github_releases_api_url, executable_name, config_file="LauncherConfig.ini"):
+    def __init__(self, current_version, github_releases_api_url, executable_name):
         self.current_version = current_version
         self.github_releases_api_url = github_releases_api_url
         self.executable_name = executable_name
-        self.config_file = config_file
+        self.config_file = CONFIG_FILE
 
-    @staticmethod
-    def version_to_number(version):
+        self._load_old_version()
+
+    def _load_old_version(self) -> None:
         """
-        Converts a version string in the format x.y.z into a number 00x00y00z (zero-padded).
+        Populate self.old_version with the value stored under
+        [Update] version in the config file.  Leaves it to None if the
+        file/section/key doesn't exist.
         """
-        try:
-            major, minor, patch = map(int, version.split('.'))
-            major_str = f"{major:03d}"
-            minor_str = f"{minor:03d}"
-            patch_str = f"{patch:03d}"
-            version_number = int(major_str + minor_str + patch_str)
-            return version_number
-        except ValueError:
-            raise ValueError("Invalid version format. Expected format 'x.y.z'")
+        config = configparser.ConfigParser()
+
+        if not os.path.exists(self.config_file):
+            self.old_version = None  # fichier absent
+            return
+
+        config.read(self.config_file)
+        self.old_version = config.get("Update", "version", fallback=None)
 
     def get_latest_release(self):
         """
@@ -63,8 +81,8 @@ class LauncherUpdater:
         print(f"Current version: {self.current_version}")
         print(f"Latest version: {latest_version}")
         try:
-            current_num = LauncherUpdater.version_to_number(self.current_version)
-            latest_num = LauncherUpdater.version_to_number(latest_version)
+            current_num = version_to_number(self.current_version)
+            latest_num = version_to_number(latest_version)
             return current_num < latest_num
         except ValueError as e:
             print(f"Error comparing versions: {e}")
@@ -104,43 +122,45 @@ class LauncherUpdater:
         print(f"Config file updated: [Update] version = {version}")
 
     @staticmethod
-    def replace_and_restart(temp_executable_path, current_executable_path):
+    def replace(temp_executable_path, current_executable_path):
         """
         Creates and executes a batch script that waits for the current launcher process to exit,
-        replaces the old executable with the new one, and restarts the launcher.
+        replaces the old executable with the new one.
         """
         try:
-            # Create a batch file that takes two parameters:
-            # %1 - path to the temporary downloaded executable
-            # %2 - path to the current executable to be replaced and relaunched
-            batch_script = textwrap.dedent(r'''@echo off
-            set "temp_exe=%~1"
-            set "current_exe=%~2"
+            batch_script = f"""@echo off
+            :check_file
+            if exist "{temp_executable_path}" (
+                timeout /t 1 >nul
+                move /y "{temp_executable_path}" "{current_executable_path}"
+            ) else (
+                goto end
+            )
+            goto check_file
 
-            :waitloop
-            timeout /t 1 >nul
-            tasklist /fi "imagename eq %~nx2" | findstr /i "%~nx2" >nul
-            if %ERRORLEVEL%==0 goto waitloop
-
-            move /y "%temp_exe%" "%current_exe%"
+            :end
             del "%~f0"
-            ''')
+            exit
+            """
+
             batch_file = "update_launcher.bat"
+
+            # Write the batch script to a file
             with open(batch_file, "w") as file:
                 file.write(batch_script)
 
-            # Launch the batch script with the temporary and current executable paths as arguments
-            subprocess.Popen([batch_file, temp_executable_path, current_executable_path], shell=True)
-            print("Update batch script launched.")
-            sys.exit(0)
+            # Run the batch file
+            subprocess.Popen([batch_file], shell=True)
+            print("Update batch script started.")
+            sys.exit(0)  # Exit the current program
         except Exception as e:
-            print(f"Error during replacement and restart: {e}")
+            print(f"Error during replacement: {e}")
 
     def prompt_user_for_update(self, tag_name, download_url, current_executable_path):
         """
         Prompts the user with a CustomTkinter modal yes/no dialog to confirm the update.
         If confirmed, downloads the new executable, updates the config file with the new version,
-        and initiates the replacement/restart process.
+        and initiates the replacement process.
         """
         user_response = CustomAskYesNo.askyesno(
             "Update Available",
@@ -151,7 +171,7 @@ class LauncherUpdater:
             temp_executable_path = os.path.join(os.getcwd(), "temp_" + self.executable_name)
             if self.download_executable(download_url, temp_executable_path):
                 # Update the config file with the new version
-                self.replace_and_restart(temp_executable_path, current_executable_path)
+                self.replace(temp_executable_path, current_executable_path)
                 return "updated"
             else:
                 print("Failed to download the update.")
@@ -182,20 +202,57 @@ class LauncherUpdater:
         Checks the configuration file to verify if the launcher version has changed.
         Returns True if the version in the config file differs from the current version.
         """
-        config = configparser.ConfigParser()
-        if not os.path.exists(self.config_file):
+        if self.old_version is None:
             return False
 
-        config.read(self.config_file)
-        if "Update" in config and "version" in config["Update"]:
-            config_version = config["Update"]["version"]
-            if config_version != self.current_version:
-                print("Launcher version has been updated according to the config file.")
-                return True
+        if self.old_version != self.current_version:
+            print("Launcher version has been updated according to the config file.")
+            return True
         return False
+
+    def _get_release_notes(self, tag_name: str) -> str:
+        """
+        Returns the release‑notes body for the given tag
+        (empty string on failure).
+        """
+        url = f"{self.github_releases_api_url}/tags/{tag_name}"
+        try:
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            return resp.json().get("body", "")
+        except requests.RequestException:
+            return ""
+
+    def show_changelog(self, tag_name: str):
+        """
+        Fetches release notes for *tag_name* and displays them
+        in a scrollable information dialog.
+        """
+        notes = self._get_release_notes(tag_name)
+        if not notes:
+            notes = "No changelog available for this release."
+
+        # Optional: ensure CRLF or at least LF line breaks for neat display
+        formatted_notes = textwrap.dedent(notes).strip()
+
+        CustomShowInfo.showinfo(
+            title=f"Changelog — {tag_name}",
+            message=formatted_notes
+        )
 
     def do_on_update(self):
         if self.updated():
-            pass
+            self.show_changelog(self.current_version)
+
+            if version_to_number(self.old_version) < version_to_number("1.1.0"):
+                mods_dir = os.path.join(GAME_DIRECTORY, "Mods")
+                for entry in os.listdir(mods_dir):
+                    full_path = os.path.join(mods_dir, entry)
+                    if os.path.isdir(full_path):
+                        shutil.rmtree(full_path)
+                        print(f"Deleted : {full_path}")
 
         self.update_config_version(self.current_version)
+
+
+

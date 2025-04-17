@@ -34,7 +34,7 @@ class Mod:
                 print(f"[ERROR] Base directory '{self.base_directory}' doesn't exist.")
 
     def install(self):
-        """Install all of the files from the base directory into the installation directory. Enables all settings"""
+        """Install all files from the base directory into the installation directory. Enables all settings"""
         # Check if there are files to be installed
         if self.base_directory is not None:
             # Ensure the installation directory exists

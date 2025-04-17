@@ -1,14 +1,16 @@
-import os
+# Compile command: pyinstaller --onefile --noconsole --name BetterOutlast2Launcher --icon=OutlastII_icon.png --add-data "Mods.zip;." --add-data "OutlastII_icon.png;." main.py
 
-import zipfile
-from paths import GAME_DIRECTORY, BASE_PATH
+import os
+from paths import GAME_DIRECTORY, MODS_PATH
 from files import File
 from bindings import DoubleBind, MiscBinding, SpeedrunHelperBinding, FPSBinding, OptionalBinding
 from settings import Setting, DisplaySetting
 from mods import LWMod, DisplayMod
 from updates import LauncherUpdater
-from os import path, makedirs
+from os import path
 from launcher import Launcher
+
+CURRENT_VERSION = "1.1.0"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
@@ -75,35 +77,18 @@ MouseSmoothing = DisplaySetting("Mouse Smoothing",
                                 tooltip_text="Changes how the mouse input is processed. Normally enabled by default")
 
 
-def extract_mods():
-    mods_zip = path.join(BASE_PATH, 'Mods.zip')
-    mods_folder = path.join(GAME_DIRECTORY, 'Mods')
-
-    if not path.exists(mods_folder):
-        makedirs(mods_folder, exist_ok=True)
-        try:
-            with zipfile.ZipFile(mods_zip, 'r') as zip_ref:
-                zip_ref.extractall(mods_folder)
-            print("Mods extracted successfully to", mods_folder)
-        except Exception as e:
-            print("Failed to extract Mods.zip:", e)
-
-
-extract_mods()
-
-
 NoCPK = LWMod("No CPK",
-              (path.join(GAME_DIRECTORY, "Mods", "No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
+              (path.join(MODS_PATH,"No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
 
 NoStamina = LWMod("No Stamina",
                   None,
                   stamina_off, sprint_delay_off)
 
 CutsceneSkip = LWMod("Cutscene Skip",
-                     (path.join(GAME_DIRECTORY, "Mods", "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+                     (path.join(MODS_PATH, "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
 
 SpeedrunHelper = DisplayMod("Speedrun Helper",
-                            (path.join(GAME_DIRECTORY, "Mods", "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
+                            (path.join(MODS_PATH, "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
                             tooltip_text="Speedrun Helper allows you to:\n"
                                          "Set Checkpoints with Ctrl + F1-F4, and TP to them with F1-F4.\n"
                                          "Use the commands Toggle Freecam, TP to Freecam and GodMode.\n"
@@ -113,6 +98,7 @@ SpeedrunHelper = DisplayMod("Speedrun Helper",
 CONFIG_FILE = "LauncherConfig.ini"
 
 
+# Check if it's the first time the Launcher has been launched
 def first_launch():
     SpeedrunHelper.install()
     Steam.disable()
@@ -128,12 +114,11 @@ if not os.path.exists(CONFIG_FILE):
 
 GITHUB_RELEASES_API_URL = "https://api.github.com/repos/HayaiNeko/BetterOutlast2Launcher/releases"
 EXECUTABLE_NAME = "BetterOutlast2Launcher.exe"
-CURRENT_VERSION = "1.0.0"
 
 
 launcher = Launcher(CURRENT_VERSION)
 
-updater = LauncherUpdater(CURRENT_VERSION, GITHUB_RELEASES_API_URL, EXECUTABLE_NAME, CONFIG_FILE)
+updater = LauncherUpdater(CURRENT_VERSION, GITHUB_RELEASES_API_URL, EXECUTABLE_NAME)
 if launcher.launcher_settings.check_for_updates:
     updater.check_and_update()
 

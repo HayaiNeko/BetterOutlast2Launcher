@@ -22,6 +22,12 @@ class Binding:
     section_bindings_frame = None
 
     def __init__(self, command: str, description: str, tooltip: str = None, deletable: bool = True):
+        """
+        :param command: Command triggered by the binding (e.g. "Stat FPS", "Show Collision")
+        :param description: Description of what the binding does (Showed to the user)
+        :param tooltip: Shows a tooltip that helps the user understand what the binding does (Optionnal)
+        :param deletable: If the binding is can be deleted
+        """
         self.command = command
         self.description = description
         self.tooltip_text = tooltip
@@ -31,6 +37,7 @@ class Binding:
         self.__class__.bindings.append(self)
 
     def load_binding(self):
+        """Loads the existing key for a binding in DefaultInput.ini (if it exists)"""
         _, line = self.file.get_line('.Bindings=(Name="', self.command)
         if line is not None:
             self.key = line.split('"')[1]
@@ -38,28 +45,28 @@ class Binding:
         self.key = ""
 
     def save_binding(self):
+        """Save changes made in DefaultInput.ini"""
         newline = f'.Bindings=(Name="{self.key}",Command="{self.command}")'
         self.file.replace_or_add(newline, '.Bindings=(Name="', self.command)
 
     @classmethod
     def load_bindings(cls):
+        """Loads all bindings"""
         for binding in cls.bindings:
             binding.load_binding()
 
     @classmethod
     def save_bindings(cls):
+        """Saves all changes made to bindings"""
         for binding in cls.bindings:
             binding.save_binding()
         cls.file.write_lines()
 
-    @classmethod
-    def sync_with_demo(cls):
-        if cls.file is None or cls.demo_file is None:
-            print("[ERROR] One of the files is None")
-            return
-        cls.file.copy_file(cls.demo_file)
-
     def wait_for_keypress(self):
+        """
+        Helper function for change binding.
+        Listens to the users keyboard and make the necessary changes accordingly
+        """
         key_name = get_keypress()
         if key_name:
             self.key = key_name
@@ -68,12 +75,15 @@ class Binding:
             self.button.configure(text="Unrecognized")
 
     def change_binding(self):
-        """Invite l’utilisateur à appuyer sur une touche pour changer le binding."""
+        """
+        Called when the user clicks on a binding's button to change it.
+        When a key is pressed, it is assigned to the binding.
+        """
         self.button.configure(text=">...<")
         Thread(target=self.wait_for_keypress, daemon=True).start()
 
     def remove_binding(self):
-        """Masque puis supprime le widget correspondant au binding."""
+        """Removes a binding both in the UI and logically"""
         if self in self.__class__.instances:
             self.file.remove_line(".Bindings=(", self.command)
             Binding.bindings.remove(self)
@@ -82,11 +92,7 @@ class Binding:
             self.container.destroy()
 
     def newline(self, parent, row):
-        """
-        Affiche une ligne de binding dans un container.
-        Le container contient le label, le bouton pour changer le binding,
-        et le bouton de suppression (DeleteButton).
-        """
+        """Shows a line in the UI for the binding."""
         self.container = ctk.CTkFrame(parent, fg_color="transparent")
         self.container.grid(row=row, column=0, columnspan=4, sticky="ew", padx=5, pady=2)
         self.container.columnconfigure(0, weight=1)
@@ -124,7 +130,16 @@ class Binding:
             self.delete_placeholder.grid(row=0, column=3, padx=15, pady=0, sticky="ew")
 
     @classmethod
-    def show_bindings_section(cls, title: str, bindings: list, add_button_text: str = None):
+    def show_bindings_section(cls, title: str, bindings: list, add_button_text: str = None) -> ctk.CTkFrame:
+        """
+        Shows an entire section of bindings.
+        A section is made of all bindings from a subclass (each subclass has a section).
+        :param title: Title of the section (showed to the user)
+        :param bindings: List of bindings in the section
+        :param add_button_text: If bindings can be added, this is the text of the add button.
+                                If set to None, there is no add button showed.
+        :return: Returns the frame of the section. Used to update the section later.
+        """
         section_frame = ctk.CTkFrame(cls.bindings_frame, fg_color="transparent")
         section_frame.pack(pady=10)
         section_title = ctk.CTkLabel(section_frame, text=title,
@@ -147,6 +162,10 @@ class Binding:
 
     @classmethod
     def update_ui(cls):
+        """
+        Updates the UI on a single section.
+        A section is made of all bindings from a subclass (each subclass has a section).
+        """
         if cls.section_bindings_frame:
             for widget in cls.section_bindings_frame.winfo_children():
                 widget.destroy()
@@ -155,10 +174,12 @@ class Binding:
 
     @classmethod
     def add_binding(cls):
+        """Defined only for class of bindings that can be added"""
         pass
 
     @classmethod
     def show_bindings(cls):
+        """Show all sections of bindings"""
         FPSBinding.show_section()
         MiscBinding.show_section()
         SpeedrunHelperBinding.show_section()
@@ -166,6 +187,7 @@ class Binding:
 
     @classmethod
     def show_window(cls):
+        """Shows the entire UI to manage bindings on the window passed into the class"""
         title = ctk.CTkLabel(cls.window, text="Configure Bindings", text_color=colors["text"], font=fonts["h2"])
         title.pack(pady=10)
 
@@ -195,6 +217,10 @@ class Binding:
 
 
 class MiscBinding(Binding):
+    """
+    Subclass for the section of miscellaneous bindings.
+    Those bindings are not deletable.
+    """
     instances = []
     title = "Misc. Bindings"
 
@@ -208,6 +234,7 @@ class MiscBinding(Binding):
 
 
 class DoubleBind(MiscBinding):
+    """Class Used specifically for the DoubleBind on interaction key"""
     def __init__(self):
         super().__init__(
             command="setbind LeftMouseButton OL_USE | setbind",
@@ -215,10 +242,10 @@ class DoubleBind(MiscBinding):
             tooltip=("Pressing that key binds both ScrollWheel and Left Mouse Button for interactions.\n"
                      "You can pass the interactions that need repeated clicking a lot faster with this. "),
         )
-        self.scroll_direction = "MouseScrollUp"  # Valeur par défaut
+        self.scroll_direction = "MouseScrollUp"  # Default Value
 
     def load_binding(self):
-        """Charge la touche principale et la direction du scroll (Up/Down)."""
+        """Loads the existing key and the scroll direction from DefaultInput.ini"""
         _, line = self.file.get_line('.Bindings=(Name="', self.command)
         if line is not None:
             parts = line.split('"')
@@ -230,20 +257,22 @@ class DoubleBind(MiscBinding):
                 self.scroll_direction = "MouseScrollUp"
 
     def save_binding(self):
+        """Saves the key and scroll direction in DefaultInput.ini"""
         newline = (
             f'.Bindings=(Name="{self.key}",Command="{self.command} {self.scroll_direction} OL_USE")'
         )
         self.file.replace_or_add(newline, ".Bindings=(", self.command)
 
     def change_scroll_direction(self, choice):
+        """Changes the scroll direction"""
         self.scroll_direction = choice
 
     def newline(self, parent, row):
         """
-        Affiche deux lignes pour l’édition du DoubleBind dans un container.
-        La première ligne contient la clé et le switch (pour activer/désactiver),
-        et la deuxième permet de choisir la direction du scroll.
+        Shows a line in the UI for the double bind.
+        Two lines need to be used to show both the key selection and scroll direction selection.
         """
+
         self.container = ctk.CTkFrame(parent, fg_color="transparent")
         self.container.grid(row=row, column=0, columnspan=3, sticky="ew", padx=5, pady=2)
 
@@ -281,17 +310,25 @@ class DoubleBind(MiscBinding):
 
 
 class FPSBinding(Binding):
+    """
+    Subclass for the section of FPS bindings.
+    Those bindings are deletable and bindings for custom fps values can be added.
+    """
     fps_values = set()
+    # Stat FPS binding is manually added to that section
     instances = [Binding(command="Stat FPS", description="Show FPS", deletable=False)]
     title = "FPS Bindings"
     section_bindings_frame = None
 
     def __init__(self, fps: int):
+        """Creates a binding with the command to set the fps to a given value"""
         super().__init__(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
         self.fps_value = fps
         bisect.insort(self.__class__.instances, self)
 
     def __lt__(self, other):
+        """Used to access sorting functions"""
+        # Check if other is an instance of FPSBinding
         if hasattr(other, "fps_value"):
             return self.fps_value < other.fps_value
         return False
@@ -302,6 +339,7 @@ class FPSBinding(Binding):
 
     @classmethod
     def add_binding(cls):
+        """Creates a window that asks a custom fps value to the user and then adds it to the list."""
         def on_submit():
             try:
                 fps = int(entry.get())
@@ -335,6 +373,10 @@ class FPSBinding(Binding):
 
     @classmethod
     def load_fps_values(cls):
+        """
+        Load existing fps bindings if they exist in DefaultInput.ini.
+        If there are none, a default set of recommended fps values is used.
+        """
         fps_lines = cls.file.get_lines("Set OLEngine MaxSmoothedFrameRate ")
         if not fps_lines:
             cls.fps_values = {3, 5, 8, 30, 60, 75, 105, 120, 144, 1000}
@@ -352,6 +394,11 @@ class FPSBinding(Binding):
 
 
 class SpeedrunHelperBinding(Binding):
+    """
+    Subclass for the section of bindings related to Speedrunhelper.
+    Those bindings are not deletable.
+    """
+
     instances = []
     title = "Speedrun Helper Bindings"
 
@@ -365,6 +412,11 @@ class SpeedrunHelperBinding(Binding):
 
 
 class OptionalBinding(Binding):
+    """
+    Subclass for the section of FPS bindings.
+    Those bindings are deletable and custom commands can be added (from a predefined list).
+    """
+
     instances = []
     title = "Optional Bindings"
     section_bindings_frame = None
@@ -378,7 +430,7 @@ class OptionalBinding(Binding):
     def load_optional_bindings(cls):
         """
         Iterate through the predefined list of optional bindings and, if a command is found
-        in the file (case-insensitive), create an instance and load the binding.
+        in the file, create an instance of the binding.
         """
         for cmd, desc in cls.default_bindings:
             if cls.file:
@@ -388,14 +440,10 @@ class OptionalBinding(Binding):
                     # Check if this binding has not already been added (case-insensitive comparison)
                     exists = any(b.command.lower() == cmd.lower() for b in cls.instances)
                     if not exists:
-                        binding = cls(cmd, desc)
-                        binding.load_binding()  # Load the associated key from the file
+                        OptionalBinding(cmd, desc)
 
     @classmethod
     def show_section(cls):
-        """
-        Display the Optional Bindings section with an add button.
-        """
         cls.section_bindings_frame = super().show_bindings_section(cls.title, cls.instances, "Add Optional Binding")
 
     @classmethod

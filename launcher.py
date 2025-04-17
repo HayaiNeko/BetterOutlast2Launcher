@@ -43,9 +43,6 @@ class Launcher:
         self.create_config_buttons()
         self.create_footer()
 
-
-
-
     def create_radio_buttons(self):
         self.patch_selector = CustomRadioButtons(
             self.main_content,
@@ -55,7 +52,6 @@ class Launcher:
         self.patch_selector.pack(pady=10)
 
         LWMod.create_mod_selector(self.main_content)
-
 
     def create_launch_button(self):
         self.launch_button = ctk.CTkButton(
@@ -160,7 +156,3 @@ class Launcher:
     def run(self):
         self.root.mainloop()
 
-
-if __name__ == "__main__":
-    app = Launcher()
-    app.run()

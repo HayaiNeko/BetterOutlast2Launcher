@@ -1,7 +1,7 @@
 import customtkinter as ctk
-from typing import List, Tuple
 from ui import colors, fonts
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import messagebox
 
 
@@ -322,4 +322,103 @@ class CustomAskYesNo:
         """
         dialog = cls(title, message, parent)
         return dialog.show()
+
+
+class CustomShowInfo:
+    """
+    Modal information window with an adaptive size and a scrollable area.
+    """
+
+    def __init__(self, title: str, message: str, parent=None):
+        self.result = None
+
+        # Create a hidden root window if no parent is provided
+        if parent is None:
+            self.root = ctk.CTk()
+            self.root.withdraw()
+            parent = self.root
+        else:
+            self.root = None
+
+        # Measure the text so we can compute a suitable window size
+        font_family, font_size = fonts["text"]
+        tk_font = tkfont.Font(family=font_family, size=font_size)
+        lines = message.splitlines() or [""]
+        max_px = max(tk_font.measure(line) for line in lines)
+        line_ht = tk_font.metrics("linespace")
+
+        width = min(max(max_px + 120, 400), 900)             # clamp between 400‑900 px
+        height = min(max(line_ht * len(lines) + 180, 300), 700)
+        wraplen = width - 80                                   # leave room for padding / scrollbar
+
+        # Create the toplevel window
+        self.window = ctk.CTkToplevel(parent)
+        self.window.title(title)
+        self.window.geometry(f"{width}x{height}")
+        self.window.minsize(int(width * 0.6), int(height * 0.6))
+        self.window.configure(bg=colors["background"])
+
+        # Center the window on the screen
+        self.window.tk.eval('tk::PlaceWindow %s center' % self.window.winfo_toplevel())
+
+        # Scrollable frame that adapts to the message size
+        self.scroll_frame = ctk.CTkScrollableFrame(
+            self.window,
+            fg_color=colors["background_shade1"],
+            scrollbar_button_hover_color=colors["secondary hover"],
+            scrollbar_button_color=colors["secondary"],
+        )
+        self.scroll_frame.pack(expand=True, fill="both", padx=20, pady=(20, 10))
+
+        # Label that holds the actual message
+        self.label = ctk.CTkLabel(
+            self.scroll_frame,
+            text=message,
+            font=fonts["text"],
+            text_color=colors["text"],
+            justify="left",
+            wraplength=wraplen,
+            anchor="nw",
+        )
+        self.label.pack(anchor="nw")
+
+        # OK button to close the dialog
+        self.ok_button = ctk.CTkButton(
+            self.window,
+            text="OK",
+            font=fonts["text"],
+            fg_color=colors["primary"],
+            hover_color=colors["primary hover"],
+            text_color=colors["button text"],
+            width=140,
+            command=self.on_ok,
+        )
+        self.ok_button.pack(pady=(0, 15))
+
+        # Make the window modal
+        self.window.grab_set()
+        self.window.protocol("WM_DELETE_WINDOW", self.on_ok)
+
+    # ──────────────────────────────────────────
+    # callbacks
+    # ──────────────────────────────────────────
+    def on_ok(self):
+        """Close the dialog and release the grab."""
+        self.result = True
+        self.window.destroy()
+        if self.root is not None:
+            self.root.destroy()
+
+    # ──────────────────────────────────────────
+    # public helpers
+    # ──────────────────────────────────────────
+    def show(self):
+        """Block until the dialog is closed, then return True."""
+        self.window.wait_window()
+        return self.result
+
+    @classmethod
+    def showinfo(cls, title: str, message: str, parent=None):
+        """Convenience one‑liner to display the dialog."""
+        return cls(title, message, parent).show()
 
