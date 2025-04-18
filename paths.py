@@ -50,15 +50,14 @@ def extract_mods() -> str:
     temp_root = os.path.join(tempfile.gettempdir(), "outlast2_mods")
 
     # Skip extraction if we already did it this session
-    if not os.path.exists(temp_root):
-        try:
-            os.makedirs(temp_root, exist_ok=True)
-            with zipfile.ZipFile(mods_zip, "r") as zf:
-                zf.extractall(temp_root)
-            print(f"Mods extracted successfully to {temp_root}")
-        except Exception as exc:
-            show_error(f"Failed to extract Mods.zip: {exc}")
-            sys.exit(1)
+    try:
+        os.makedirs(temp_root, exist_ok=True)
+        with zipfile.ZipFile(mods_zip, "r") as zf:
+            zf.extractall(temp_root)
+        print(f"Mods extracted successfully to {temp_root}")
+    except Exception as exc:
+        show_error(f"Failed to extract Mods.zip: {exc}")
+        sys.exit(1)
 
     return temp_root
 
