@@ -10,7 +10,7 @@ from updates import LauncherUpdater
 from os import path
 from launcher import Launcher
 
-CURRENT_VERSION = "1.1.1"
+CURRENT_VERSION = "1.1.2"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
@@ -78,7 +78,7 @@ MouseSmoothing = DisplaySetting("Mouse Smoothing",
 
 
 NoCPK = LWMod("No CPK",
-              (path.join(MODS_PATH,"No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
+              (path.join(MODS_PATH, "No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
 
 NoStamina = LWMod("No Stamina",
                   None,
