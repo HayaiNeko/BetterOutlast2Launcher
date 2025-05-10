@@ -1,4 +1,4 @@
-# Compile command: pyinstaller --onefile --noconsole --name BetterOutlast2Launcher --icon=OutlastII_icon.png --add-data "Mods.zip;." --add-data "OutlastII_icon.png;." main.py
+# Compile command: pyinstaller --onefile --name BetterOutlast2Launcher --icon=OutlastII_icon.png --add-data "Mods.zip;." --add-data "OutlastII_icon.png;." main.py --noconsole
 
 import os
 from paths import GAME_DIRECTORY, MODS_PATH
@@ -10,7 +10,7 @@ from updates import LauncherUpdater
 from os import path
 from launcher import Launcher
 
-CURRENT_VERSION = "1.1.2"
+CURRENT_VERSION = "1.1.3"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))

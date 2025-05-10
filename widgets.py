@@ -15,7 +15,7 @@ def show_error(message):
 
 class CustomTopLevel(ctk.CTkToplevel):
     def __init__(self, parent, title: str, width: int, height: int):
-        super().__init__(parent ,fg_color=colors["background"])
+        super().__init__(parent, fg_color=colors["background"])
         self.title(title)
         self.geometry(f"{width}x{height}")
         self.attributes("-topmost", True)
@@ -245,7 +245,7 @@ class CustomAskYesNo:
         self.dialog.title(title)
         self.dialog.geometry("300x150")
         self.dialog.resizable(False, False)
-        self.dialog.configure(bg=colors["background"])
+        self.dialog.configure(bg=colors["background"], fg_color=colors["background"])
 
         # Center the dialog window using the underlying Tk interpreter.
         self.dialog.tk.eval('tk::PlaceWindow %s center' % self.dialog.winfo_toplevel())
@@ -356,7 +356,7 @@ class CustomShowInfo:
         self.window.title(title)
         self.window.geometry(f"{width}x{height}")
         self.window.minsize(int(width * 0.6), int(height * 0.6))
-        self.window.configure(bg=colors["background"])
+        self.window.configure(bg=colors["background"], fg_color=colors["background"])
 
         # Center the window on the screen
         self.window.tk.eval('tk::PlaceWindow %s center' % self.window.winfo_toplevel())

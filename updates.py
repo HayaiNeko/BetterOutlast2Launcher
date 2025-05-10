@@ -5,6 +5,7 @@ import subprocess
 import textwrap
 import configparser
 import shutil
+from bindings import Binding
 from widgets import CustomAskYesNo, CustomShowInfo
 from paths import GAME_DIRECTORY, CONFIG_FILE
 
@@ -252,7 +253,8 @@ class LauncherUpdater:
                         shutil.rmtree(full_path)
                         print(f"Deleted : {full_path}")
 
+            if version_to_number(self.old_version) < version_to_number("1.1.3"):
+                Binding.file.replace_term("OL_USE", "OLA_USE")
+                Binding.file.delete_duplicates("setbind LeftMouseButton OLA_USE | setbind")
+                Binding.file.write_lines()
         self.update_config_version(self.current_version)
-
-
-

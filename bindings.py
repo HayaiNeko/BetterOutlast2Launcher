@@ -237,7 +237,7 @@ class DoubleBind(MiscBinding):
     """Class Used specifically for the DoubleBind on interaction key"""
     def __init__(self):
         super().__init__(
-            command="setbind LeftMouseButton OL_USE | setbind",
+            command="setbind LeftMouseButton OLA_USE | setbind",
             description="Second Bind for\n Interaction",
             tooltip=("Pressing that key binds both ScrollWheel and Left Mouse Button for interactions.\n"
                      "You can pass the interactions that need repeated clicking a lot faster with this. "),
@@ -259,7 +259,7 @@ class DoubleBind(MiscBinding):
     def save_binding(self):
         """Saves the key and scroll direction in DefaultInput.ini"""
         newline = (
-            f'.Bindings=(Name="{self.key}",Command="{self.command} {self.scroll_direction} OL_USE")'
+            f'.Bindings=(Name="{self.key}",Command="{self.command} {self.scroll_direction} OLA_USE")'
         )
         self.file.replace_or_add(newline, ".Bindings=(", self.command)
 

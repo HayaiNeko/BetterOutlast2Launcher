@@ -80,6 +80,44 @@ class File:
         ]
         print(f"[INFO] Deleted lines containing {search_terms}")
 
+    def replace_term(self, term: str, newterm: str):
+        """
+        Replace all occurrences of `term` with `newterm`.
+        """
+        occurrences = 0
+        for idx, line in enumerate(self.lines):
+            if term in line:
+                count = line.count(term)
+                self.lines[idx] = line.replace(term, newterm)
+                occurrences += count
+        if occurrences > 0:
+            print(f"[INFO] Replaced {occurrences} occurrences of '{term}' with '{newterm}' in {self.path}")
+        else:
+            print(f"[INFO] No occurrences of '{term}' found in {self.path}")
+
+    def delete_duplicates(self, term: str):
+        """
+        Search for lines containing `term` and delete duplicates, keeping only the first occurrence.
+        """
+        seen = False
+        new_lines = []
+        deleted = 0
+        for line in self.lines:
+            if term in line:
+                if not seen:
+                    new_lines.append(line)
+                    seen = True
+                else:
+                    deleted += 1
+                    continue
+            else:
+                new_lines.append(line)
+        self.lines = new_lines
+        if deleted > 0:
+            print(f"[INFO] Deleted {deleted} duplicate lines containing '{term}' in {self.path}, kept first occurrence")
+        else:
+            print(f"[INFO] No duplicate lines containing '{term}' found in {self.path}")
+
     def copy_file(self, other):
         other.lines = self.lines
         other.write_lines()
