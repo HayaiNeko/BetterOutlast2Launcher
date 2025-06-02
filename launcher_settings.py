@@ -39,12 +39,14 @@ class LauncherSettings:
 
         self.var_close = ctk.BooleanVar(master=container, value=self.close_on_launch)
         switch_close = ctk.CTkSwitch(container, variable=self.var_close,
-                                     text="Close On Launch", command=self.save,
+                                     text="Close On Launch", text_color=colors["text"],
+                                     command=self.save,
                                      progress_color=colors["primary"])
         switch_close.pack(pady=5)
 
         self.var_updates = ctk.BooleanVar(master=container, value=self.check_for_updates)
         switch_updates = ctk.CTkSwitch(container, variable=self.var_updates,
-                                       text="Check For Updates", command=self.save,
+                                       text="Check For Updates", text_color=colors["text"],
+                                       command=self.save,
                                        progress_color=colors["primary"])
         switch_updates.pack(pady=(5, 15))
