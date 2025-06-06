@@ -30,14 +30,14 @@ OL2_ICON = os.path.join(BASE_PATH, "OutlastII_icon.png")
 
 
 def check_game_folder() -> None:
-    """Verify that the launcher is located in the Outlast II installation folder."""
+    """Verify that the launcher is located in the OutlastII folder."""
     required = ["OLGame", "Binaries", "Engine"]
     missing  = [f for f in required if not os.path.exists(os.path.join(GAME_DIRECTORY, f))]
 
     if missing:
         show_error(
             "The launcher is not in the correct directory.\n"
-            "Place it inside the Outlast II game folder."
+            "Place it inside the Outlast 2 folder."
         )
         sys.exit(1)
 
