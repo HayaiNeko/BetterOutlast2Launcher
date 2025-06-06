@@ -5,7 +5,7 @@ from mods import Mod, LWMod, DisplayMod
 from bindings import Binding
 from settings import DisplaySetting
 import subprocess
-from widgets import CustomRadioButtons, CustomTopLevel, show_error
+from widgets import CustomRadioButtons, CustomTopLevel
 from ui import colors, fonts
 from paths import *
 import tkinter as tk

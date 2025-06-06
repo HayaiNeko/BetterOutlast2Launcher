@@ -4,7 +4,7 @@ import customtkinter as ctk
 from ui import fonts, colors  # Using provided fonts and colors
 
 class LauncherSettings:
-    SECTION = "Launcher Settings"  # Section name with space
+    SECTION = "Launcher Settings"
 
     def __init__(self):
         self.config_file = CONFIG_FILE

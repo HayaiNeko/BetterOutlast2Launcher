@@ -1,7 +1,6 @@
 import ctypes
 from ctypes import wintypes
 
-# Importation de la DLL User32
 try:
     user32 = ctypes.WinDLL('user32', use_last_error=True)
 except:
@@ -23,7 +22,6 @@ VIRTUAL_KEY_CODES = {
     0x7A: "F11", 0x7B: "F12"
 }
 
-# Dictionnaire des boutons de souris
 MOUSE_BUTTONS = {
     0x0201: "LeftMouseButton",   # WM_LBUTTONDOWN
     0x0204: "RightMouseButton",  # WM_RBUTTONDOWN
@@ -31,12 +29,10 @@ MOUSE_BUTTONS = {
 }
 
 
-# Définition des structures pour le hook clavier
 class KBDLLHOOKSTRUCT(ctypes.Structure):
     _fields_ = [("vkCode", wintypes.DWORD)]
 
 
-# Définition des structures pour le hook souris
 class MSLLHOOKSTRUCT(ctypes.Structure):
     _fields_ = [
         ("pt", wintypes.POINT),
@@ -44,9 +40,8 @@ class MSLLHOOKSTRUCT(ctypes.Structure):
     ]
 
 
-# Fonction pour capturer un appui unique de touche ou un clic de souris
 def get_keypress():
-    key_or_mouse = None  # Stocke l'input détecté
+    key_or_mouse = None
 
     def low_level_keyboard_proc(nCode, wParam, lParam):
         nonlocal key_or_mouse
@@ -54,7 +49,7 @@ def get_keypress():
             kb_struct = ctypes.cast(lParam, ctypes.POINTER(KBDLLHOOKSTRUCT)).contents
             vk_code = kb_struct.vkCode
             key_or_mouse = VIRTUAL_KEY_CODES.get(vk_code, f"Unknown({vk_code})")
-            user32.PostQuitMessage(0)  # Quitte la boucle
+            user32.PostQuitMessage(0)
         return user32.CallNextHookEx(None, nCode, wParam, ctypes.byref(ctypes.c_void_p(lParam)))
 
     def low_level_mouse_proc(nCode, wParam, lParam):
@@ -65,20 +60,19 @@ def get_keypress():
             elif wParam == 0x020B:  # WM_XBUTTONDOWN (ThumbMouseButton1 et ThumbMouseButton2)
                 mouse_struct = ctypes.cast(lParam, ctypes.POINTER(MSLLHOOKSTRUCT)).contents
                 if mouse_struct.mouseData >> 16 == 1:
-                    key_or_mouse = "ThumbMouseButton"  # XBUTTON1
+                    key_or_mouse = "ThumbMouseButton"
                 elif mouse_struct.mouseData >> 16 == 2:
-                    key_or_mouse = "ThumbMouseButton2"  # XBUTTON2
+                    key_or_mouse = "ThumbMouseButton2"
             if key_or_mouse:
-                user32.PostQuitMessage(0)  # Quitte la boucle
+                user32.PostQuitMessage(0)
         return user32.CallNextHookEx(None, nCode, wParam, ctypes.byref(ctypes.c_void_p(lParam)))
 
-    # Définir et installer les hooks clavier et souris
     HOOKPROC = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM)
     keyboard_hook = HOOKPROC(low_level_keyboard_proc)
     mouse_hook = HOOKPROC(low_level_mouse_proc)
 
-    keyboard_handle = user32.SetWindowsHookExA(13, keyboard_hook, None, 0)  # WH_KEYBOARD_LL
-    mouse_handle = user32.SetWindowsHookExA(14, mouse_hook, None, 0)  # WH_MOUSE_LL
+    keyboard_handle = user32.SetWindowsHookExA(13, keyboard_hook, None, 0)
+    mouse_handle = user32.SetWindowsHookExA(14, mouse_hook, None, 0)
 
     try:
         msg = wintypes.MSG()
