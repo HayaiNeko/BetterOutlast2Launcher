@@ -10,7 +10,7 @@ from updates import LauncherUpdater
 from os import path
 from launcher import Launcher
 
-CURRENT_VERSION = "1.1.3"
+CURRENT_VERSION = "1.1.4"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
@@ -46,7 +46,8 @@ OptionalBinding.default_bindings = [
     ("Set OLHero StaminaMaxStamina 100 | Set OLHero SprintDelay 2", "Disable No Stamina Settings"),
     ("DisplayAll OLHero StaminaMaxStamina | Displayall OLHero SprintDelay", "Show Stamina/SprintDelay"),
     ("DisplayAll OLHero Location", "Show Location"),
-    ("DisplayAll OLHero Velocity", "Show Velocity")
+    ("DisplayAll OLHero Velocity", "Show Velocity"),
+    ("nxvis collision", "Show Collision")
 ]
 
 OptionalBinding.load_optional_bindings()
