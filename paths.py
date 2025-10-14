@@ -49,7 +49,6 @@ def extract_mods() -> str:
     mods_zip  = os.path.join(BASE_PATH, "Mods.zip")
     temp_root = os.path.join(tempfile.gettempdir(), "outlast2_mods")
 
-    # Skip extraction if we already did it this session
     try:
         os.makedirs(temp_root, exist_ok=True)
         with zipfile.ZipFile(mods_zip, "r") as zf:
@@ -61,10 +60,6 @@ def extract_mods() -> str:
 
     return temp_root
 
-
-# ---------------------------------------------------------------------------
-#  Main sequence
-# ---------------------------------------------------------------------------
 check_game_folder()
 
 # Extracting mods into temporary folder

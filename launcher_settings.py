@@ -19,7 +19,6 @@ class LauncherSettings:
         self.var_updates = None
 
     def save(self):
-        # Save settings to the configuration file
         self.close_on_launch = self.var_close.get()
         self.config.set(LauncherSettings.SECTION, "Close On Launch", str(self.close_on_launch))
         self.check_for_updates = self.var_updates.get()
@@ -32,7 +31,6 @@ class LauncherSettings:
         container = ctk.CTkFrame(master, fg_color=colors["background_shade1"])
         container.pack(fill="x", padx=10, pady=10)
 
-        # Centered title
         title = ctk.CTkLabel(container, text="Launcher Settings",
                              font=fonts["h3"], text_color=colors["text"])
         title.pack(anchor="center", pady=20)

@@ -47,7 +47,8 @@ OptionalBinding.default_bindings = [
     ("DisplayAll OLHero StaminaMaxStamina | Displayall OLHero SprintDelay", "Show Stamina/SprintDelay"),
     ("DisplayAll OLHero Location", "Show Location"),
     ("DisplayAll OLHero Velocity", "Show Velocity"),
-    ("nxvis collision", "Show Collision")
+    ("nxvis collision", "Show Collision"),
+    ("Set OLGame CurrentCheckpointName None | StreamMap minefacility_persistent", "Judges Skip")
 ]
 
 OptionalBinding.load_optional_bindings()
