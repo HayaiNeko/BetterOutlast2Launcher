@@ -3,104 +3,113 @@ import shutil
 import customtkinter as ctk
 from ui import fonts, colors
 from settings import Setting
-from widgets import CustomCheckboxes, Tooltip, TooltipPlaceholder
-from typing import List, Tuple
+from widgets import CustomCheckboxes, InfoIcon, InfoIconPlaceholder
 
 
 class Mod:
-    def __init__(self, name: str, paths: Tuple[str, str] = None, *settings: Setting):
-        """
-        :param name: Name of the Mod, used for identification and in the UI
-        :param paths: Tuple containing the path for the base directory and the installation directory.
-        Can be set to None if the mod only relies on settings.
-        :param settings: Used for mods that needs to toggle settings during the installation
-        """
+    """
+    Represents a mod with optional source and install paths. Settings can be tied to the mod.
+    This class manages installation. Child classes manage GUI and additional logic.
+    """
+
+    def __init__(self, name: str, source_path: str, install_path: str, *settings: Setting):
         self.name = name
-        self.paths: List[Tuple[str, str]] = []
+        self.source_path = source_path      # Folder containing mod files (optional)
+        self.install_path = install_path    # Destination folder in game (optional)
         self.settings = settings
-        self.base_directory = None
 
-        if paths is not None:
-            self.base_directory = paths[0]
-            self.install_directory = paths[1]
+    # --- Internal utils ---
 
-            # Get all file paths from the base directory
-            if os.path.exists(self.base_directory):
-                for item in os.listdir(self.base_directory):
-                    source = os.path.join(self.base_directory, item)
-                    destination = os.path.join(self.install_directory, item)
-                    self.paths.append((source, destination))
-            else:
-                print(f"[ERROR] Base directory '{self.base_directory}' doesn't exist.")
+    def _iter_source_files(self):
+        """Yield (relative_path, absolute_source_path) for each file in the source directory."""
+        if not self.source_path or not os.path.isdir(self.source_path):
+            return  # silently skip if no source
+        for root, _, files in os.walk(self.source_path):
+            for file in files:
+                abs_src = os.path.join(root, file)
+                rel_path = os.path.relpath(abs_src, self.source_path)
+                yield rel_path.replace("\\", "/"), abs_src
+
+    # --- Core operations ---
 
     def install(self):
-        """Install all files from the base directory into the installation directory. Enables all settings"""
-        # Check if there are files to be installed
-        if self.base_directory is not None:
-            # Ensure the installation directory exists
-            if not os.path.exists(self.install_directory):
-                os.makedirs(self.install_directory)
+        """Install all files from source_path to install_path and enable settings."""
+        print(f"[INFO] Installing mod '{self.name}'...")
 
-            # Copy each file or directory from source to destination
-            for source, destination in self.paths:
-                if os.path.exists(source):
+        # Copy files only if paths are defined
+        if self.source_path and self.install_path:
+            if not os.path.isdir(self.source_path):
+                print(f"[WARN] Source directory '{self.source_path}' not found.")
+            else:
+                for rel_path, src in self._iter_source_files():
+                    dst = os.path.join(self.install_path, rel_path)
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
                     try:
-                        if os.path.isdir(source):
-                            shutil.copytree(source, destination, dirs_exist_ok=True)
-                            print(f"[INFO] Copied directory '{source}' to '{destination}'.")
-                        else:
-                            shutil.copy(source, destination)
-                            print(f"[INFO] Copied file '{source}' to '{destination}'.")
+                        shutil.copy2(src, dst)
+                        print(f"[INFO] Copied '{rel_path}'")
                     except Exception as e:
-                        print(f"[ERROR] Error copying '{source}' to '{destination}': {e}")
-                else:
-                    print(f"[ERROR] Source path '{source}' does not exist. Skipping.")
+                        print(f"[ERROR] Could not copy '{src}': {e}")
 
-        # Enable all settings
-        for setting in self.settings:
-            setting.enable()
+        # Enable all related settings
+        for s in self.settings:
+            s.enable()
 
     def uninstall(self):
-        """Uninstall all the files from the mod. Disables all settings"""
-        # Remove each destination file
-        for _, destination in self.paths:
-            if os.path.exists(destination):
-                try:
-                    os.remove(destination)
-                    print(f"[INFO] Removed '{destination}'.")
-                except Exception as e:
-                    print(f"[ERROR] Could not remove '{destination}': {e}")
-            else:
-                print(f"[ERROR] Destination file '{destination}' does not exist.")
+        """Remove files corresponding to the source and disable settings."""
+        print(f"[INFO] Uninstalling mod '{self.name}'...")
 
-        # Disable all settings
-        for setting in self.settings:
-            setting.disable()
+        # Remove only matching files if paths exist
+        if self.source_path and self.install_path:
+            if not os.path.isdir(self.source_path):
+                print(f"[WARN] Source directory '{self.source_path}' not found.")
+            else:
+                for rel_path, _ in self._iter_source_files():
+                    dst = os.path.join(self.install_path, rel_path)
+                    if os.path.exists(dst):
+                        try:
+                            os.remove(dst)
+                            print(f"[INFO] Removed '{rel_path}'")
+                        except Exception as e:
+                            print(f"[ERROR] Could not remove '{dst}': {e}")
+                    else:
+                        print(f"[WARN] File not found: '{rel_path}'")
+
+        # Disable all related settings
+        for s in self.settings:
+            s.disable()
 
     def is_installed(self) -> bool:
-        """Check all the files from the mod are present and if all settings are enabled"""
-        # The mod is considered installed if all destination files exist.
-        if all(os.path.exists(destination) for _, destination in self.paths):
-            for setting in self.settings:
-                if not setting.is_enabled():
-                    return False
-            return True
-        return False
+        """Return True if all source files exist in the install directory and all settings are enabled."""
+        if self.source_path and self.install_path:
+            if os.path.isdir(self.source_path):
+                for rel_path, _ in self._iter_source_files():
+                    dst = os.path.join(self.install_path, rel_path)
+                    if not os.path.exists(dst):
+                        return False
+
+        # Check all settings are enabled
+        for s in self.settings:
+            if not s.is_enabled():
+                return False
+
+        return True
 
     def toggle(self):
-        """Toggles the mod on and off"""
+        """Toggle the mod on/off depending on installation state."""
         if self.is_installed():
             self.uninstall()
         else:
             self.install()
 
 
+
+
 class DisplayMod(Mod):
     # All DisplayMod instances
     display_mods = []
 
-    def __init__(self, name, paths, tooltip_text: str = ""):
-        super().__init__(name, paths)
+    def __init__(self, name, source_path, install_path, tooltip_text: str = ""):
+        super().__init__(name, source_path, install_path)
         self.tooltip_text = tooltip_text
 
         self.__class__.display_mods.append(self)
@@ -118,9 +127,9 @@ class DisplayMod(Mod):
                                            fg_color=colors["primary"], hover_color=colors["primary hover"],
                                            command=lambda: [self.toggle(), self.refresh_window()])
         if self.tooltip_text:
-            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+            self.tooltip = InfoIcon(self.container, text=self.tooltip_text, shade=1)
         else:
-            self.tooltip = TooltipPlaceholder(self.container)
+            self.tooltip = InfoIconPlaceholder(self.container)
 
         self.tooltip.pack(side="right", padx=10)
         self.action_button.pack(side="right", padx=10)
@@ -157,8 +166,8 @@ class LWMod(Mod):
     selector = None
     sprint_delay = None
 
-    def __init__(self, name, paths, *settings):
-        super().__init__(name, paths, *settings)
+    def __init__(self, name, source_path, install_path, *settings):
+        super().__init__(name, source_path, install_path, *settings)
         self.__class__.lw_mods.append(self)
 
     @classmethod

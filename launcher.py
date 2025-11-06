@@ -35,8 +35,8 @@ class Launcher:
         self.version = current_version
 
         self.mod_loader = Mod("ModLoader",
-                              (os.path.join(MODS_PATH, "ModLoader"),
-                               os.path.join(GAME_DIRECTORY, "Binaries", "Win64")))
+                              source_path=os.path.join(MODS_PATH, "ModLoader"),
+                              install_path=os.path.join(GAME_DIRECTORY, "Binaries", "Win64"))
 
         self.create_radio_buttons()
         self.create_launch_button()

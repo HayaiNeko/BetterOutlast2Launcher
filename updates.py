@@ -30,8 +30,21 @@ class LauncherUpdater:
         self.github_releases_api_url = github_releases_api_url
         self.executable_name = executable_name
         self.config_file = CONFIG_FILE
+        self.objects = {}
 
         self._load_old_version()
+
+    def register(self, name, obj):
+        """
+        Registers an object in the updater's context so it can be accessed during update operations.
+        """
+        self.objects[name] = obj
+
+    def get(self, name):
+        """
+        Retrieves an object from the registry, or None if it doesn't exist.
+        """
+        return self.objects.get(name)
 
     def _load_old_version(self) -> None:
         """
@@ -257,4 +270,14 @@ class LauncherUpdater:
                 Binding.file.replace_term("OL_USE", "OLA_USE")
                 Binding.file.delete_duplicates("setbind LeftMouseButton OLA_USE | setbind")
                 Binding.file.write_lines()
+
+            if version_to_number(self.old_version) < version_to_number("1.2.0"):
+                SpeedrunHelper = self.get("SpeedrunHelper")
+                SpeedrunHelper.uninstall()
+                SpeedrunHelper.install()
+
+                Binding.file.replace_term("ToggleGodMode", "GodMode")
+                Binding.file.replace_term("ToggleFreeCam", "FreeCam")
+                Binding.file.write_lines()
+
         self.update_config_version(self.current_version)

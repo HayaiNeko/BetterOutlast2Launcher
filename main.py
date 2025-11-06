@@ -10,7 +10,7 @@ from updates import LauncherUpdater
 from os import path
 from launcher import Launcher
 
-CURRENT_VERSION = "1.1.5"
+CURRENT_VERSION = "1.2.0"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
@@ -32,9 +32,11 @@ DoubleBind()
 MiscBinding(command="DisplayAll OLHero Rotation", description="Show Rotation")
 MiscBinding(command="Set OLGame DifficultyMode EDMO_Insane", description="Set Difficulty to Insane")
 
-SpeedrunHelperBinding(command="BOL ToggleFreeCam", description="Toggle Freecam")
+SpeedrunHelperBinding(command="BOL FreeCam", description="Toggle Freecam")
 SpeedrunHelperBinding(command="BOL TeleportToFreeCam", description="Teleport to Freecam")
-SpeedrunHelperBinding(command="BOL ToggleGodMode", description="Toggle GodMode")
+SpeedrunHelperBinding(command="BOL GodMode", description="Toggle GodMode")
+SpeedrunHelperBinding(command="BOL ShowPlayerInfo", description="Show Player Info")
+SpeedrunHelperBinding(command="BOL ShowGameplayElements", description="Show Gameplay Elements")
 
 
 FPSBinding.load_fps_values()
@@ -48,7 +50,8 @@ OptionalBinding.default_bindings = [
     ("DisplayAll OLHero Location", "Show Location"),
     ("DisplayAll OLHero Velocity", "Show Velocity"),
     ("nxvis collision", "Show Collision"),
-    ("Set OLGame CurrentCheckpointName None | StreamMap minefacility_persistent", "Judges Skip")
+    ("Set OLGame CurrentCheckpointName None | StreamMap minefacility_persistent", "Judges Skip"),
+    
 ]
 
 OptionalBinding.load_optional_bindings()
@@ -80,21 +83,22 @@ MouseSmoothing = DisplaySetting("Mouse Smoothing",
 
 
 NoCPK = LWMod("No CPK",
-              (path.join(MODS_PATH, "No CPK"), path.join(GAME_DIRECTORY, "Mods")),)
+              source_path=path.join(MODS_PATH, "No CPK"), install_path=path.join(GAME_DIRECTORY, "Mods"))
 
 NoStamina = LWMod("No Stamina",
-                  None,
+                  "", "",
                   stamina_off, sprint_delay_off)
 
 CutsceneSkip = LWMod("Cutscene Skip",
-                     (path.join(MODS_PATH, "Cutscene Skip"), path.join(GAME_DIRECTORY, "Mods")))
+                     source_path=path.join(MODS_PATH, "Cutscene Skip"), install_path=path.join(GAME_DIRECTORY, "Mods"))
 
 SpeedrunHelper = DisplayMod("Speedrun Helper",
-                            (path.join(MODS_PATH, "Speedrun Helper"), path.join(GAME_DIRECTORY, "Mods")),
+                            source_path=path.join(MODS_PATH, "Speedrun Helper"), install_path=path.join(GAME_DIRECTORY, "Mods"),
                             tooltip_text="Speedrun Helper allows you to:\n"
                                          "Set Checkpoints with Ctrl + F1-F4, and TP to them with F1-F4.\n"
                                          "Use the commands Toggle Freecam, TP to Freecam and GodMode.\n"
-                                         "You can setup the bindings for Speedrun Helper commands with the launcher.")
+                                         "You can setup the bindings for Speedrun Helper commands with the launcher."
+                            )
 
 
 CONFIG_FILE = "LauncherConfig.ini"
@@ -121,6 +125,8 @@ EXECUTABLE_NAME = "BetterOutlast2Launcher.exe"
 launcher = Launcher(CURRENT_VERSION)
 
 updater = LauncherUpdater(CURRENT_VERSION, GITHUB_RELEASES_API_URL, EXECUTABLE_NAME)
+updater.register("SpeedrunHelper", SpeedrunHelper)
+
 if launcher.launcher_settings.check_for_updates:
     updater.check_and_update()
 

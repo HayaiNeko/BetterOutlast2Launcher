@@ -1,7 +1,7 @@
 from ui import fonts, colors
 import customtkinter as ctk
 from files import File
-from widgets import Tooltip, TooltipPlaceholder
+from widgets import InfoIcon, InfoIconPlaceholder
 
 
 class Setting:
@@ -69,9 +69,9 @@ class DisplaySetting(Setting):
                                            command=lambda: [self.toggle(), self.refresh_window()])
 
         if self.tooltip_text:
-            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+            self.tooltip = InfoIcon(self.container, text=self.tooltip_text, shade=1)
         else:
-            self.tooltip = TooltipPlaceholder(self.container)
+            self.tooltip = InfoIconPlaceholder(self.container)
 
         self.tooltip.pack(side="right", padx=10)
         self.action_button.pack(side="right", padx=10)

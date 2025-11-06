@@ -5,7 +5,7 @@ from ui import fonts, colors
 from files import File
 from threading import Thread
 from VKcode import get_keypress
-from widgets import Tooltip, TooltipPlaceholder, DeleteButton, DeletePlaceHolder
+from widgets import InfoIcon, InfoIconPlaceholder, DeleteButton, DeletePlaceHolder
 from tkinter import messagebox
 from paths import GAME_DIRECTORY
 
@@ -112,9 +112,9 @@ class Binding:
         self.button.grid(row=0, column=1, padx=10, pady=5, sticky="w")
 
         if self.tooltip_text:
-            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+            self.tooltip = InfoIcon(self.container, text=self.tooltip_text, shade=1)
         else:
-            self.tooltip = TooltipPlaceholder(self.container)
+            self.tooltip = InfoIconPlaceholder(self.container)
         self.tooltip.grid(row=0, column=2, padx=(20, 0), pady=5, sticky="ew")
 
         if self.deletable:
@@ -300,9 +300,9 @@ class DoubleBind(MiscBinding):
         self.scroll_combobox.grid(row=1, column=1, padx=10, pady=(5, 15), sticky="ew")
 
         if self.tooltip_text:
-            self.tooltip = Tooltip(self.container, text=self.tooltip_text, shade=1)
+            self.tooltip = InfoIcon(self.container, text=self.tooltip_text, shade=1)
         else:
-            self.tooltip = TooltipPlaceholder(self.container)
+            self.tooltip = InfoIconPlaceholder(self.container)
         self.tooltip.grid(row=0, column=2, rowspan=2, padx=(20, 0), pady=5, sticky="ew")
 
         self.delete_placeholder = DeletePlaceHolder(self.container, background_color=colors["background_shade1"])
