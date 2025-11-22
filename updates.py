@@ -280,4 +280,9 @@ class LauncherUpdater:
                 Binding.file.replace_term("ToggleFreeCam", "FreeCam")
                 Binding.file.write_lines()
 
+            if version_to_number(self.old_version) < version_to_number("1.3.0"):
+                Binding.file.remove_line("DisplayAll OLHero Location")
+                Binding.file.remove_line("DisplayALL OLHero Velocity")
+                Binding.file.write_lines()
+
         self.update_config_version(self.current_version)

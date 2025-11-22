@@ -4,6 +4,7 @@ import customtkinter as ctk
 from ui import fonts, colors
 from settings import Setting
 from widgets import CustomCheckboxes, InfoIcon, InfoIconPlaceholder
+import hashlib
 
 
 class Mod:
@@ -206,3 +207,70 @@ class LWMod(Mod):
             cls.sprint_delay.enable()
 
 
+class ReplacementMod:
+    """Mod that works by replacing an existing files. The original copy of the files needs to be provided."""
+
+    def __init__(self, name: str, mod_source_path: str, original_source_path: str, install_path: str, *settings):
+        self.mod_source = Mod(f"modded_{name}", mod_source_path, install_path)
+        self.original_source = Mod(f"original_{name}", original_source_path, install_path)
+
+        self.name = name
+        self.settings = settings
+
+    @staticmethod
+    def _calculate_file_hash(filepath: str) -> str:
+        """Calculates the SHA256 hash of a file for content verification."""
+        if not os.path.exists(filepath) or not os.path.isfile(filepath):
+            return ""
+
+        hasher = hashlib.sha256()
+        try:
+            with open(filepath, 'rb') as file:
+                buf = file.read(65536)
+                while len(buf) > 0:
+                    hasher.update(buf)
+                    buf = file.read(65536)
+            return hasher.hexdigest()
+        except Exception:
+            print(f"[Error] Couldn't calculate the hash of {filepath}")
+
+    def install(self):
+        """Copies modded files and enables settings."""
+        print(f"[INFO] Installing replacement mod '{self.name}'...")
+        self.mod_source.install()
+        for s in self.settings:
+            s.enable()
+
+    def uninstall(self):
+        """Restores original files and disables settings."""
+        print(f"[INFO] Uninstalling replacement mod '{self.name}'...")
+        self.original_source.install()
+        for s in self.settings:
+            s.disable()
+
+    def is_installed(self) -> bool:
+        """
+        Returns True if the installed file matches the MODDED file (verified via hash)
+        AND if all settings are enabled.
+        """
+
+        if self.mod_source.source_path and self.mod_source.install_path:
+
+            for rel_path, src_mod_path in self.mod_source._iter_source_files():
+                dst_installed_path = os.path.join(self.mod_source.install_path, rel_path)
+
+                if not os.path.exists(dst_installed_path):
+                    return False
+
+                hash_source = self._calculate_file_hash(src_mod_path)
+                hash_installed = self._calculate_file_hash(dst_installed_path)
+
+                # Check for hash match
+                if not hash_source or hash_source != hash_installed:
+                    return False
+
+        for s in self.settings:
+            if not s.is_enabled():
+                return False
+
+        return True

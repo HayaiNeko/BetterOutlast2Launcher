@@ -1,16 +1,14 @@
-# Compile command: pyinstaller --onefile --name BetterOutlast2Launcher --icon=OutlastII_icon.png --add-data "Mods.zip;." --add-data "OutlastII_icon.png;." main.py --noconsole
-
 import os
 from paths import GAME_DIRECTORY, MODS_PATH
 from files import File
-from bindings import DoubleBind, MiscBinding, SpeedrunHelperBinding, FPSBinding, OptionalBinding
+from bindings import DoubleBind, MiscBinding, SpeedrunHelperBinding, FPSBinding, OptionalBinding, DevConsoleBinding
 from settings import Setting, DisplaySetting
 from mods import LWMod, DisplayMod
 from updates import LauncherUpdater
 from os import path
 from launcher import Launcher
 
-CURRENT_VERSION = "1.2.0"
+CURRENT_VERSION = "1.3.0"
 
 # Files
 default_game = File(path.join(GAME_DIRECTORY, "OLGame", "Config", "DefaultGame.ini"))
@@ -29,8 +27,6 @@ LWMod.sprint_delay = Setting("SprintDelay",
 
 # Bindings
 DoubleBind()
-MiscBinding(command="DisplayAll OLHero Rotation", description="Show Rotation")
-MiscBinding(command="Set OLGame DifficultyMode EDMO_Insane", description="Set Difficulty to Insane")
 
 SpeedrunHelperBinding(command="BOL FreeCam", description="Toggle Freecam")
 SpeedrunHelperBinding(command="BOL TeleportToFreeCam", description="Teleport to Freecam")
@@ -41,20 +37,20 @@ SpeedrunHelperBinding(command="BOL ShowGameplayElements", description="Show Game
 
 FPSBinding.load_fps_values()
 
-OptionalBinding.default_bindings = [
+OptionalBinding.default_bindings += [
+    ("Set OLGame DifficultyMode EDMO_Insane", "Set Difficulty to Insane"),
+    ("Set OLGame CurrentCheckpointName None | StreamMap minefacility_persistent", "Judges Skip Bind"),
+    ("Show Fog", "Toggle Fog"),
     ("Set OLGame CurrentCheckpointName None", "Set Checkpoint to None"),
     ("Set OLHero StaminaMaxStamina -1", "Enable Infinite Stamina"),
     ("Set OLHero StaminaMaxStamina -1 | Set OLHero SprintDelay 0", "Enable No Stamina Settings"),
     ("Set OLHero StaminaMaxStamina 100 | Set OLHero SprintDelay 2", "Disable No Stamina Settings"),
     ("DisplayAll OLHero StaminaMaxStamina | Displayall OLHero SprintDelay", "Show Stamina/SprintDelay"),
-    ("DisplayAll OLHero Location", "Show Location"),
-    ("DisplayAll OLHero Velocity", "Show Velocity"),
     ("nxvis collision", "Show Collision"),
-    ("Set OLGame CurrentCheckpointName None | StreamMap minefacility_persistent", "Judges Skip"),
-    
 ]
 
 OptionalBinding.load_optional_bindings()
+DevConsoleBinding.enable_console()
 
 # Settings
 Steam = DisplaySetting("Launch with Steam",
@@ -96,7 +92,7 @@ SpeedrunHelper = DisplayMod("Speedrun Helper",
                             source_path=path.join(MODS_PATH, "Speedrun Helper"), install_path=path.join(GAME_DIRECTORY, "Mods"),
                             tooltip_text="Speedrun Helper allows you to:\n"
                                          "Set Checkpoints with Ctrl + F1-F4, and TP to them with F1-F4.\n"
-                                         "Use the commands Toggle Freecam, TP to Freecam and GodMode.\n"
+                                         "Use the commands Toggle Freecam, TP to Free, GodMode,\n ShowPlayerInfo and Show Gameplay Elements.\n"
                                          "You can setup the bindings for Speedrun Helper commands with the launcher."
                             )
 

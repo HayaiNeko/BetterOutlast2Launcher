@@ -7,7 +7,9 @@ from threading import Thread
 from VKcode import get_keypress
 from widgets import InfoIcon, InfoIconPlaceholder, DeleteButton, DeletePlaceHolder
 from tkinter import messagebox
-from paths import GAME_DIRECTORY
+from paths import GAME_DIRECTORY, MODS_PATH
+from platformdirs import user_documents_path
+from mods import ReplacementMod
 
 
 class Binding:
@@ -38,7 +40,7 @@ class Binding:
 
     def load_binding(self):
         """Loads the existing key for a binding in DefaultInput.ini (if it exists)"""
-        _, line = self.file.get_line('.Bindings=(Name="', self.command)
+        _, line = self.file.get_line('.Bindings=(Name="',  f'Command="{self.command}"')
         if line is not None:
             self.key = line.split('"')[1]
             return
@@ -47,7 +49,7 @@ class Binding:
     def save_binding(self):
         """Save changes made in DefaultInput.ini"""
         newline = f'.Bindings=(Name="{self.key}",Command="{self.command}")'
-        self.file.replace_or_add(newline, '.Bindings=(Name="', self.command)
+        self.file.replace_or_add(newline, '.Bindings=(Name="',  f'Command="{self.command}"')
 
     @classmethod
     def load_bindings(cls):
@@ -85,7 +87,7 @@ class Binding:
     def remove_binding(self):
         """Removes a binding both in the UI and logically"""
         if self in self.__class__.instances:
-            self.file.remove_line(".Bindings=(", self.command)
+            self.file.remove_line(".Bindings=(", f'Command="{self.command}"')
             Binding.bindings.remove(self)
             self.__class__.instances.remove(self)
             self.container.grid_forget()
@@ -420,7 +422,8 @@ class OptionalBinding(Binding):
     instances = []
     title = "Optional Bindings"
     section_bindings_frame = None
-    default_bindings: list = None
+    default_bindings: list = []
+    available_bindings: list = []
 
     def __init__(self, command, description, tooltip=None):
         super().__init__(command, description, tooltip)
@@ -432,13 +435,21 @@ class OptionalBinding(Binding):
         Iterate through the predefined list of optional bindings and, if a command is found
         in the file, create an instance of the binding.
         """
+        for cmd, desc in DevConsoleBinding.dev_bindings:
+            if cls.file:
+                _, line = cls.file.get_line(cmd)
+                if line is not None:
+                    if line[0] != ";":
+                        exists = any(binding.command.lower() == cmd.lower() for binding in cls.instances)
+                        if not exists:
+                            DevConsoleBinding(cmd, desc)
+
         for cmd, desc in cls.default_bindings:
             if cls.file:
-                # Search without considering case
                 _, line = cls.file.get_line('.Bindings=(Name="', cmd)
                 if line is not None:
                     # Check if this binding has not already been added (case-insensitive comparison)
-                    exists = any(b.command.lower() == cmd.lower() for b in cls.instances)
+                    exists = any(binding.command.lower() == cmd.lower() for binding in cls.instances)
                     if not exists:
                         OptionalBinding(cmd, desc)
 
@@ -452,21 +463,30 @@ class OptionalBinding(Binding):
         Open a window to allow the addition of an optional binding from the predefined list.
         Only a binding that is not already present will be available in the dropdown menu.
         """
-        # Remove from the list those that have already been added
-        available_bindings = [
-            (cmd, desc) for cmd, desc in cls.default_bindings
-            if not any(inst.command.lower() == cmd.lower() for inst in cls.instances)
-        ]
-        if not available_bindings:
+        cls.available_bindings = [
+                                     (cmd, desc) for cmd, desc in DevConsoleBinding.dev_bindings
+                                     if not any(inst.command.lower() == cmd.lower() for inst in cls.instances)
+                                 ] + [
+                                     (cmd, desc) for cmd, desc in cls.default_bindings
+                                     if not any(inst.command.lower() == cmd.lower() for inst in cls.instances)
+                                 ]
+
+        if not cls.available_bindings:
             messagebox.showinfo("Info", "All Optional Bindings have already been added.")
             return
 
         def on_submit():
             selected = option_menu.get()
-            # Search in the list for the binding corresponding to the selected command
-            for cmd, desc in available_bindings:
+
+            for cmd, desc in cls.available_bindings:
                 if desc == selected:
-                    OptionalBinding(cmd, desc)
+
+                    is_dev_console = any(c == cmd for c, d in DevConsoleBinding.dev_bindings)
+                    if is_dev_console:
+                        DevConsoleBinding(cmd, desc)
+                    else:
+                        OptionalBinding(cmd, desc)
+
                     window.destroy()
                     cls.update_ui()
                     return
@@ -485,7 +505,7 @@ class OptionalBinding(Binding):
         label.pack(pady=10)
 
         # Dropdown menu offering only the bindings that haven't been added
-        options = [desc for _, desc in available_bindings]
+        options = [desc for _, desc in cls.available_bindings]
         option_menu = ctk.CTkOptionMenu(
             window,
             values=options,
@@ -507,3 +527,50 @@ class OptionalBinding(Binding):
             command=on_submit
         )
         submit_button.pack(pady=10)
+
+
+class DevConsoleBinding(OptionalBinding):
+    engine_upk = ReplacementMod(name="engine.upk",
+                                mod_source_path=os.path.join(MODS_PATH, "EngineUPK", "Modded"),
+                                original_source_path=os.path.join(MODS_PATH, "EngineUPK", "Orignal"),
+                                install_path=os.path.join(GAME_DIRECTORY, "OLGame", "CookedPCConsole"))
+
+    dev_bindings = [
+        ("TypeKey=", "UE Console"),
+        ("ConsoleKey=", "Detailed Console")
+    ]
+
+    @classmethod
+    def enable_console(cls):
+        # install modded engine.upk that enables the console
+        if not cls.engine_upk.is_installed():
+            cls.engine_upk.install()
+
+        # Disable alt key to open the console
+        Binding.file.remove_line("TypeKeyAlt")
+        Binding.file.write_lines()
+
+    def __init__(self, command, description):
+        super().__init__(command, description)
+
+    def load_binding(self):
+        """Loads the existing key for a binding in DefaultInput.ini (if it exists)"""
+        _, line = self.file.get_line(self.command)
+        if line is not None:
+            self.key = line.split('=')[1]
+            return
+        self.key = ""
+
+    def save_binding(self):
+        """Save changes made in DefaultInput.ini"""
+        newline = f'{self.command}{self.key}'
+        self.file.replace_line(newline, self.command)
+
+    def remove_binding(self):
+        """Removes a binding both in the UI and logically"""
+        if self in self.__class__.instances:
+            self.file.replace_term(self.command, f";{self.command}")
+            Binding.bindings.remove(self)
+            self.__class__.instances.remove(self)
+            self.container.grid_forget()
+            self.container.destroy()
