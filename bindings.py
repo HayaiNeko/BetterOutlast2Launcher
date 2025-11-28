@@ -322,7 +322,7 @@ class FPSBinding(Binding):
     title = "FPS Bindings"
     section_bindings_frame = None
 
-    def __init__(self, fps: int):
+    def __init__(self, fps):
         """Creates a binding with the command to set the fps to a given value"""
         super().__init__(command=f"Set OLEngine MaxSmoothedFrameRate {fps}", description=f"Set max FPS to {fps}")
         self.fps_value = fps
@@ -343,13 +343,23 @@ class FPSBinding(Binding):
     def add_binding(cls):
         """Creates a window that asks a custom fps value to the user and then adds it to the list."""
         def on_submit():
+            fps_raw = entry.get()
+            fps_raw = fps_raw.replace(',', '.') # Standardized input
             try:
-                fps = int(entry.get())
-                FPSBinding(fps)
-                window.destroy()
-                cls.update_ui()
+                fps = int(fps_raw)
             except ValueError:
-                messagebox.showerror('Error', 'Please enter a valid number.')
+                try:
+                    fps = float(fps_raw)
+                except ValueError:
+                    messagebox.showerror('Value Error', 'Please enter a valid number.')
+                    return
+            if fps <= 0:
+                messagebox.showerror('Value Error', 'Please enter a positive number')
+
+            FPSBinding(fps)
+            window.destroy()
+            cls.update_ui()
+
 
         window = ctk.CTkToplevel()
         window.title('Add FPS Binding')
