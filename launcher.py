@@ -105,7 +105,8 @@ class Launcher:
         # Credits
         credits_title = ctk.CTkLabel(self.root, text="Credits", font=fonts["h5"])
         credits_label = ctk.CTkLabel(self.root, text="Launcher made by HayaiNeko.\n"
-                                                "Thanks to lanylow for developing the mods.",
+                                                "Thanks to lanylow for developing the Speedrun Helper (and mod loader).\n"
+                                                "Thanks to Hydle for making the UE console unlocker.",
                                      font=fonts["small"])
         credits_label.pack(side="bottom", pady=(0, 5))
         credits_title.pack(side="bottom", pady=0)
