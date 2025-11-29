@@ -14,7 +14,7 @@ import tkinter as tk
 class Launcher:
     def __init__(self, current_version):
         self.root = ctk.CTk(fg_color=colors["background"])
-        self.root.geometry("600x600")
+        self.root.geometry("600x615")
         self.root.title("Better Outlast II Launcher")
 
         self.root.iconphoto(True, tk.PhotoImage(file=OL2_ICON))
