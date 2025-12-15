@@ -97,7 +97,7 @@ class LauncherUpdater:
         try:
             current_num = version_to_number(self.current_version)
             latest_num = version_to_number(latest_version)
-            return current_num < latest_num
+            return current_num != latest_num
         except ValueError as e:
             print(f"Error comparing versions: {e}")
             return False
@@ -271,11 +271,6 @@ class LauncherUpdater:
                 Binding.file.delete_duplicates("setbind LeftMouseButton OLA_USE | setbind")
                 Binding.file.write_lines()
 
-            if version_to_number(self.old_version) < version_to_number("1.2.0"):
-                SpeedrunHelper = self.get("SpeedrunHelper")
-                SpeedrunHelper.uninstall()
-                SpeedrunHelper.install()
-
                 Binding.file.replace_term("ToggleGodMode", "GodMode")
                 Binding.file.replace_term("ToggleFreeCam", "FreeCam")
                 Binding.file.write_lines()
@@ -285,7 +280,7 @@ class LauncherUpdater:
                 Binding.file.remove_line("DisplayALL OLHero Velocity")
                 Binding.file.write_lines()
 
-            if version_to_number(self.old_version) < version_to_number("1.3.3"):
+            if version_to_number(self.old_version) < version_to_number("1.3.4"):
                 SpeedrunHelper = self.get("SpeedrunHelper")
                 SpeedrunHelper.uninstall()
                 SpeedrunHelper.install()
